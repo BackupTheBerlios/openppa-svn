@@ -1,3 +1,3 @@
-# Welcome to the machine
+# Project name
 project(OpenPPA)
 
