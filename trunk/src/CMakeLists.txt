@@ -4,10 +4,14 @@ project(OpenPPA)
 #sources
 set(PPACoreExecFiles
 	core/pcctrlnode.cpp
+	core/pcpipectrl.cpp
+	core/pcprocctrl.cpp
 )
 
 set(PPACoreLibFiles
 	core/pcctrlnode.cpp
+	core/pcpipectrl.cpp
+	core/pcprocctrl.cpp
 )
 
 set(PPAProxyFiles

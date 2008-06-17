@@ -8,9 +8,9 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#include "pcctrlnode.h"
+#include "core/pcctrlnode.h"
 
-extern char ** environ;
+extern char ** environ;		//?
 // TODO: ITOA 16char, file names
 // TODO: pipe handling specifics, IO!!
 // TODO: platform independence
@@ -22,24 +22,50 @@ extern char ** environ;
 // called when lib
 PCCtrlNode::PCCtrlNode() {
 	bProcessed = true;
+	bParent = true;
 
 	dbgPrint("initPPAExec called\n");
-	createPipe();
-	dbgPrint("<1>\n");
-	forkExec();
-	dbgPrint("<2>\n");
+	pipeCtrl = new PCPipeCtrl();
+	pipeCtrl -> setAutoDel(true);
 
-	connectPipe();
-	dbgPrint("<3>\n");
+	procCtrl = new PCProcCtrl();
+	procCtrl->newProcess("./PPACoreExec", pipeCtrl->getInPipe(), pipeCtrl->getOutPipe());
+
+	pipeCtrl->openWritePipe();
 
 	sendLoop();
 }
 
+// called when exec
+PCCtrlNode::PCCtrlNode(char * input, char * output) {
+	bProcessed = true;
+	bParent = false;
+
+	pipeCtrl = new PCPipeCtrl(input, output);
+	pipeCtrl->openWritePipe();
+}
+
+PCCtrlNode::~PCCtrlNode() {
+	if(bParent) {
+		pipeCtrl->setAutoDel(true);
+		procCtrl->waitChildEnd();
+	}
+
+	delete pipeCtrl;
+}
+
+
+// ---- FOR TESTING ----
+
+//-----------------------
+// Lib, Exec loop handlers
+//-----------------------
+
 void PCCtrlNode::sendLoop() {
 	while(true){
-		printf("enter your junk: ");
-		scanf("%s", cOutBuffer);
-		send(cOutBuffer,strlen(cOutBuffer) + 1);
+		printf("\nenter your junk: ");
+		gets(cOutBuffer);
+		pipeCtrl->send(cOutBuffer,strlen(cOutBuffer) + 1);
 
 		if(strlen(cOutBuffer) >= 2)
 			if((cOutBuffer[0] == 'q') && (cOutBuffer[1] == 'u'))
@@ -49,89 +75,26 @@ void PCCtrlNode::sendLoop() {
 
 void PCCtrlNode::execHandler() {
 	while(true) {
-		iInBuffer = thr_receive(cInBuffer);
-		if(iInBuffer > 2)
+		iInBuffer = pipeCtrl->thr_receive(cInBuffer);
+		if(iInBuffer > 2) {
+			printf("<THRINP:%s>\n", cInBuffer);
+
 			if((cInBuffer[0] == 'q') && (cInBuffer[1] == 'u'))
 				break;
-	}
+		}
+	}	
 }
 
-// called when exec
-PCCtrlNode::PCCtrlNode(char * input, char * output) {
-	bProcessed = true;
 
-	strcpy(cInPipe, input);
-	strcpy(cOutPipe, output);
-
-	dbgPrint("<2t>\n");
-	connectPipe();
-	
-	close(pipeIn);
-	close(pipeOut);
-
-	unlink(cInPipe);
-	unlink(cOutPipe);
-}
-
-PCCtrlNode::~PCCtrlNode() {
-	close(pipeIn);
-	close(pipeOut);
-}
-
-void PCCtrlNode::forkExec(){
-	int ret = fork();
-	if(!ret)// This is child
-		// PPACore expects Input and Output in this order
-		// it's vice-versa from PPACoreLib's point of view
-		execl("./PPACoreExec", "PPACoreExec", cOutPipe, cInPipe, 0);
-
-	else
-		dbgPrint("PPACoreLib ended\n");
-}
+//-----------------------
+// debugging functions
+//-----------------------
 
 void PCCtrlNode::dbgPrint(char * stuff) {
 	return;
 	printf(stuff);
 }
 
-
-//-----------------------
-// PPACore Pipe and IO section
-//-----------------------
-
-
-void PCCtrlNode::send(char * dat, int length) {
-	write(pipeOut, dat, length);
-}
-
-int PCCtrlNode::thr_receive(char * dat) {
-	int iBuffer;
-
-	while(true) {
-		usleep(10000);
-		iBuffer = 128;
-		iBuffer = read(pipeIn, dat, iBuffer);
-		if(iBuffer == -1)
-			continue;
-
-		return iBuffer;
-	}
-}
-
-
-void PCCtrlNode::createPipe() {
-	// create communication channels
-	sprintf(cInPipe,"%s%x","ppaI",getpid());
-	sprintf(cOutPipe,"%s%x","ppaO",getpid());
-
-	mkfifo(cInPipe,0600);
-	mkfifo(cOutPipe,0600);
-}
-
-void PCCtrlNode::connectPipe() {
-	pipeIn = open(cInPipe, O_RDONLY | O_NONBLOCK);
-	pipeOut = open(cOutPipe, O_WRONLY | O_NONBLOCK);
-}
 
 //-----------------------
 // PPACore exec section, threading proxy
@@ -150,14 +113,21 @@ int main(int argc, char ** argv)
 	PCCtrlNode * pcn = new PCCtrlNode(argv[1],argv[2]);
 
 	pthread_t thrId;
-if(	pthread_create(&thrId, NULL, thrRoutine, pcn)	) {
-		printf("error!!!");
+	if(pthread_create(&thrId, NULL, thrRoutine, pcn)) {
+		printf("error!!!\n");
 	}
+	else
+		printf("pthread created\n");
+
+	pthread_join(thrId, NULL);
 
 	return 0;
 }
 
 void *thrRoutine(void* arg) {
+	printf("hello me iz tread\ntreadyaay\nsumstuf\n");
 	((PCCtrlNode*)arg)->execHandler();
+	printf("gtthreadterm\n");
+	delete ((PCCtrlNode*)arg);
 	pthread_exit(NULL);
 }
