@@ -1,3 +1,14 @@
+/*!
+ * 	Copyright (c) 2008, Štefan Sakalík.
+ * 	All Rights Reserved.
+ *
+ * 	Licensed under the GNU GENERAL PUBLIC LICENSE (v3).
+ */
+
+#ifndef PCPROCCTRL_H_
+#define PCPROCCTRL_H_
+
+#include "misc/dbgprint.h"
 
 class PCProcCtrl {
 public:
@@ -8,5 +19,6 @@ public:
 	void waitChildEnd();
 private:
 	int iChildProc;
-	void dbgPrint(char * stuff);
 };
+
+#endif /* PCPROCCTRL_H_ */

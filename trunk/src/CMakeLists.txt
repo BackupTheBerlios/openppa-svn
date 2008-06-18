@@ -6,16 +6,24 @@ set(PPACoreExecFiles
 	core/pcctrlnode.cpp
 	core/pcpipectrl.cpp
 	core/pcprocctrl.cpp
+	core/pcpacketfactory.cpp
+
+	misc/dbgprint.cpp
 )
 
 set(PPACoreLibFiles
 	core/pcctrlnode.cpp
 	core/pcpipectrl.cpp
 	core/pcprocctrl.cpp
+	core/pcpacketfactory.cpp
+
+	misc/dbgprint.cpp
 )
 
 set(PPAProxyFiles
 	proxy/ppaproxy.cpp
+
+	misc/dbgprint.cpp
 )
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})

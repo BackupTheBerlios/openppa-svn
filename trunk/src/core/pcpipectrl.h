@@ -1,3 +1,12 @@
+/*!
+ * 	Copyright (c) 2008, Štefan Sakalík.
+ * 	All Rights Reserved.
+ *
+ * 	Licensed under the GNU GENERAL PUBLIC LICENSE (v3).
+ */
+
+#ifndef PCPIPECTRL_H_
+#define PCPIPECTRL_H_
 
 class PCPipeCtrl {
 public:
@@ -34,3 +43,5 @@ private:
 
 	int pipeIn, pipeOut;
 };
+
+#endif /* PCPIPECTRL_H_ */

@@ -1,3 +1,10 @@
+/*!
+ * 	Copyright (c) 2008, Štefan Sakalík.
+ * 	All Rights Reserved.
+ *
+ * 	Licensed under the GNU GENERAL PUBLIC LICENSE (v3).
+ */
+
 // PL->CL api functions
 #include <stdio.h>
 #include <string.h>
@@ -19,24 +26,40 @@ extern char ** environ;		//?
 // PCCtrlNode: PL comunicates with CL through this, exec too
 //-----------------------
 
-// called when lib
-PCCtrlNode::PCCtrlNode() {
+/*!
+ * 	\class PCCtrlNode
+ * 	\brief Main CL class, CL<->PL communication
+ *
+ * 	Only this class is used for communication with PL. 
+ * 	TODO: Communication protocol (new class)
+ */
+
+/*!
+ * 	\brief Called from PL
+ * 	It automatically creates pipes, spawns new process and initiates communication with it.
+ * 	TODO: Only parameter is executable name.
+ * 	TODO: strExec, absolute/relative path?, name stripping
+ */
+PCCtrlNode::PCCtrlNode(char* strExec) {
 	bProcessed = true;
 	bParent = true;
 
-	dbgPrint("initPPAExec called\n");
+	dbgPrint(0,"initPPAExec called");
 	pipeCtrl = new PCPipeCtrl();
 	pipeCtrl -> setAutoDel(true);
 
 	procCtrl = new PCProcCtrl();
-	procCtrl->newProcess("./PPACoreExec", pipeCtrl->getInPipe(), pipeCtrl->getOutPipe());
+	procCtrl->newProcess(strExec, pipeCtrl->getInPipe(), pipeCtrl->getOutPipe());
 
 	pipeCtrl->openWritePipe();
 
-	sendLoop();
+	//sendLoop();
 }
 
-// called when exec
+/*!
+ *	\brief Called from executable, communication for spawned process
+ *	It takes parameters input and output pipe, initiates communication.
+ */
 PCCtrlNode::PCCtrlNode(char * input, char * output) {
 	bProcessed = true;
 	bParent = false;
@@ -45,22 +68,54 @@ PCCtrlNode::PCCtrlNode(char * input, char * output) {
 	pipeCtrl->openWritePipe();
 }
 
+/*!
+ * 	\brief Destroy pipes, end communication
+ * 	\TODO: Tell child to terminate.
+ */
 PCCtrlNode::~PCCtrlNode() {
 	if(bParent) {
 		pipeCtrl->setAutoDel(true);
-		procCtrl->waitChildEnd();
+		send("qu(PCDELROUTINE)\n");
+		usleep(500000);
+//		procCtrl->waitChildEnd();
 	}
 
 	delete pipeCtrl;
 }
 
+//!	Send null-terminated string
+void PCCtrlNode::send(char* strin) {
+//	if(string[iLen] == '\0')
+//		string[++iLen] = ' ';
+//
+	char string[128];
+	strcpy(string,strin);
+	int iLen = strlen(string)+1;
 
-// ---- FOR TESTING ----
+//	printf("%s\n",string);
+//	if(string[0] == 'H')
+//		string[1] = 0;	
+//	printf("%s\n",string);
+
+	pipeCtrl->send(string,iLen);
+}
+
+//!	Receive null-terminated string, allocates the string
+void PCCtrlNode::receive(char* string) {
+	int length = pipeCtrl->thr_receive(string);
+	if (string[length-1] == '\0')		//test case, do not need?
+		string[length-1] = ' ';
+}
+
 
 //-----------------------
-// Lib, Exec loop handlers
+//----- FOR TESTING -----
 //-----------------------
 
+/*!
+ * 	\brief For testing
+ * 	Request input from user and send it through pipe
+ */
 void PCCtrlNode::sendLoop() {
 	while(true){
 		printf("\nenter your junk: ");
@@ -73,11 +128,15 @@ void PCCtrlNode::sendLoop() {
 	}			
 }
 
+/*!
+ * 	\brief For testing
+ *	(spawned exec) Wait for input, when requested to end, terminate child process
+ */
 void PCCtrlNode::execHandler() {
 	while(true) {
 		iInBuffer = pipeCtrl->thr_receive(cInBuffer);
 		if(iInBuffer > 2) {
-			printf("<THRINP:%s>\n", cInBuffer);
+			dbgPrint(0, "<THRINP:%s>", cInBuffer);
 
 			if((cInBuffer[0] == 'q') && (cInBuffer[1] == 'u'))
 				break;
@@ -85,21 +144,11 @@ void PCCtrlNode::execHandler() {
 	}	
 }
 
-
-//-----------------------
-// debugging functions
-//-----------------------
-
-void PCCtrlNode::dbgPrint(char * stuff) {
-	return;
-	printf(stuff);
-}
-
-
 //-----------------------
 // PPACore exec section, threading proxy
 //-----------------------
 
+//! This is main routine when executed. Pass control to PCCtrlNode immediatelly
 int main(int argc, char ** argv)
 {
 	if(argc != 3) {
@@ -107,27 +156,26 @@ int main(int argc, char ** argv)
 		return 1;
 	}
 	else {
-		printf("Successful init: %s %s \n", argv[1],argv[2]);
+		dbgPrint(0,"Successful init: %s %s \n", argv[1],argv[2]);
 	}
 	
 	PCCtrlNode * pcn = new PCCtrlNode(argv[1],argv[2]);
 
 	pthread_t thrId;
 	if(pthread_create(&thrId, NULL, thrRoutine, pcn)) {
-		printf("error!!!\n");
+		dbgPrint(4, "Thread error");
 	}
 	else
-		printf("pthread created\n");
+		dbgPrint(0,"pthread created");
 
 	pthread_join(thrId, NULL);
 
 	return 0;
 }
 
+//! Threading routine, pass control to PCCtrlNode
 void *thrRoutine(void* arg) {
-	printf("hello me iz tread\ntreadyaay\nsumstuf\n");
 	((PCCtrlNode*)arg)->execHandler();
-	printf("gtthreadterm\n");
 	delete ((PCCtrlNode*)arg);
 	pthread_exit(NULL);
 }

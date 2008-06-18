@@ -1,25 +1,35 @@
-#ifndef PPACORE_H_
-#define PPACORE_H_
+/*!
+ * 	Copyright (c) 2008, Štefan Sakalík.
+ * 	All Rights Reserved.
+ *
+ * 	Licensed under the GNU GENERAL PUBLIC LICENSE (v3).
+ */
+
+#ifndef PCCTRLNODE_H_
+#define PCCTRLNODE_H_
 
 #include "core/pcpipectrl.h"
 #include "core/pcprocctrl.h"
+
+#include "misc/dbgprint.h"
 
 void *thrRoutine(void* arg);
 
 class PCCtrlNode {
 public:
-	PCCtrlNode();
+	PCCtrlNode(char* strExec);
 	PCCtrlNode(char * input, char * output);
 	~PCCtrlNode();
 
 	void execHandler();
+	void send(char* string);
+	void receive(char* string);
 
 private:
 	PCPipeCtrl *pipeCtrl;
 	PCProcCtrl *procCtrl;
 
 	void forkExec();
-	void dbgPrint(char * stuff);
 	void sendLoop();
 
 
@@ -32,4 +42,4 @@ private:
 	char cOutBuffer[128];
 };
 
-#endif /* PPACORE_H_ */
+#endif /* PCCTRLNODE_H_ */
