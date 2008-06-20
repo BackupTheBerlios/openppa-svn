@@ -2,6 +2,6 @@
 
 int printHello()
 {
-	printf("hello");
+	printf("\nda plugin sez hello\n");
 	return 0;
 }

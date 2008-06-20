@@ -32,7 +32,8 @@ void dbgPrint(int lvl, const char* str, ...) {
 			break;
 
 		case 3:
-			strcpy(errStr,"<FATAL> ");
+		case 4:
+			strcpy(errStr,"<***FATAL***> ");
 		 	break;
 	}
 

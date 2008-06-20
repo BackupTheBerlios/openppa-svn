@@ -26,7 +26,8 @@ void PCProcCtrl::newProcess(char* cExecName, char* cInPipe, char* cOutPipe) {
 	if(!iChildProc)// This is child
 		// PPACore expects Input and Output in this order
 		// it's vice-versa from PPACoreLib's point of view
-		execl(cExecName, cExecName, cOutPipe, cInPipe, 0);
+		if(execl(cExecName, cExecName, cOutPipe, cInPipe, 0) == -1)
+			dbgPrint(3,"Exec Fault: tried exec (%s, pipes: %s, %s)",cExecName,cInPipe,cOutPipe);
 
 	else
 		dbgPrint(0,"PPACoreLib ended\n");

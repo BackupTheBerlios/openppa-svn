@@ -35,11 +35,12 @@ private:
 
 	int iInBuffer;
 	char cInBuffer[128];
-	bool bProcessed;
-	bool bDel;
 
 	int iOutBuffer;
 	char cOutBuffer[128];
+
+	bool bProcessed;
+	bool bDel;
 
 	int pipeIn, pipeOut;
 };

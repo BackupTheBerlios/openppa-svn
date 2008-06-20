@@ -6,6 +6,8 @@
  */
 
 #include "core/pcpipectrl.h"
+#include "core/pcpacketcenter.h"
+#include "misc/dbgprint.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -28,6 +30,10 @@ PCPipeCtrl::PCPipeCtrl() {
 
 	createPipe();
 	openReadPipe();
+
+	int i=0;
+	while(i < 128)
+		cInBuffer[i++] = 0;
 }
 
 //! Constructor: Open (yet generated) pipes for reading
@@ -63,22 +69,39 @@ void PCPipeCtrl::setIOPipes(char * cPInp, char * cPOut) {
 //! Send data block
 //! TODO: length of sent data
 void PCPipeCtrl::send(char * dat, int length) {
-	write(pipeOut, dat, length);
+	if(length > 128) {
+		dbgPrint(4,"PipeCtrl:send -> too big packet");
+		return;
+	}
+
+	PCPacketCenter::createPacket(&length, dat, cOutBuffer);
+	write(pipeOut, cOutBuffer, length);
 	//usleep(10000);
 }
 
 //! Receive, buffer = 128B, sleep = 10ms
 int PCPipeCtrl::thr_receive(char * dat) {
-	int iBuffer;
+	dbgPrint(0,"thr_receive request");
+	if(PCPacketCenter::testPacket(cInBuffer)){
+		PCPacketCenter::readPacket(&iInBuffer, cInBuffer, dat);
+		PCPacketCenter::shiftPacket(cInBuffer);
+		return iInBuffer;
+	}
+	dbgPrint(0,"testPacket: unsuccessful");
 
 	while(true) {
 		usleep(10000);
-		iBuffer = 128;
-		iBuffer = read(pipeIn, dat, iBuffer);
-		if(iBuffer == -1)
+		iInBuffer = 128;
+		iInBuffer = read(pipeIn, cInBuffer, iInBuffer);
+		if(iInBuffer == -1)
 			continue;
 
-		return iBuffer;
+		dbgPrint(0,"READPACKET routine in");
+
+		PCPacketCenter::readPacket(&iInBuffer, cInBuffer, dat);
+		PCPacketCenter::shiftPacket(cInBuffer);
+
+		return iInBuffer;
 	}
 }
 
@@ -93,10 +116,8 @@ void PCPipeCtrl::createPipe() {
 	sprintf(cInPipe,"%s%x","ppaI",getpid());
 	sprintf(cOutPipe,"%s%x","ppaO",getpid());
 
-//	mkfifo(cInPipe,0600);
-//	mkfifo(cOutPipe,0600);
-	mknod(cInPipe,S_IFIFO | 0666,0);
-	mknod(cOutPipe,S_IFIFO | 0666,0);
+	mkfifo(cInPipe,0600);
+	mkfifo(cOutPipe,0600);
 }
 
 //! Open read pipe

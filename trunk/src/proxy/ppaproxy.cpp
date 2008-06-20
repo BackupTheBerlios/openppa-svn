@@ -8,16 +8,8 @@
 #include "ppaproxy.h"
 #include <unistd.h>
 
-int main(int argc, char ** argv)
+int xmain(int argc, char ** argv)
 {
 	PCCtrlNode* pcn = new PCCtrlNode("./PPACoreExec");
-	pcn->send("Hello world\n");
-	pcn->send("1whazup\n");
-usleep(500000);
-	pcn->send("2yaaa\n");
-	pcn->send("3goohw\n");
-	pcn->send("4wooclaw\n");
-//	pcn->send("qu\n");
-usleep(500000);
 	delete pcn;
 }

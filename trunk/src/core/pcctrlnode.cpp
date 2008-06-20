@@ -16,6 +16,7 @@
 #include <unistd.h>
 
 #include "core/pcctrlnode.h"
+#include "proxy/proxyexecgen.h"
 
 extern char ** environ;		//?
 // TODO: ITOA 16char, file names
@@ -84,27 +85,20 @@ PCCtrlNode::~PCCtrlNode() {
 }
 
 //!	Send null-terminated string
-void PCCtrlNode::send(char* strin) {
-//	if(string[iLen] == '\0')
-//		string[++iLen] = ' ';
-//
-	char string[128];
-	strcpy(string,strin);
-	int iLen = strlen(string)+1;
+void PCCtrlNode::send(char* string) {
+	send(string,strlen(string));
+}
 
-//	printf("%s\n",string);
-//	if(string[0] == 'H')
-//		string[1] = 0;	
-//	printf("%s\n",string);
-
+//!	Send data of length iLen 
+void PCCtrlNode::send(char* string, int iLen) {
+	dbgPrint(0,"send data: [%d][%d], len=%d", string[0], string[1], iLen);
 	pipeCtrl->send(string,iLen);
 }
 
 //!	Receive null-terminated string, allocates the string
+//	TODO: receive length handling
 void PCCtrlNode::receive(char* string) {
 	int length = pipeCtrl->thr_receive(string);
-	if (string[length-1] == '\0')		//test case, do not need?
-		string[length-1] = ' ';
 }
 
 
@@ -133,13 +127,20 @@ void PCCtrlNode::sendLoop() {
  *	(spawned exec) Wait for input, when requested to end, terminate child process
  */
 void PCCtrlNode::execHandler() {
+	dbgPrint(0,"execHandl");
 	while(true) {
+		dbgPrint(0,"recv>=%d",iInBuffer);
 		iInBuffer = pipeCtrl->thr_receive(cInBuffer);
+		dbgPrint(0,"recv<=%d",iInBuffer);
 		if(iInBuffer > 2) {
-			dbgPrint(0, "<THRINP:%s>", cInBuffer);
+			//dbgPrint(0, "<THRINP:%s>", cInBuffer);
+			dbgPrint(0, "<THRINP:[%d][%d],%s>", cInBuffer[0], cInBuffer[1], cInBuffer);
 
 			if((cInBuffer[0] == 'q') && (cInBuffer[1] == 'u'))
 				break;
+
+			// TODO: protocol controller, funcCtrlHandler
+			recvFnCall(cInBuffer);
 		}
 	}	
 }

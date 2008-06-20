@@ -1,1 +1,1 @@
-add_library(Plugin SHARED plugin.c)
+add_library(helloPluginLib SHARED plugin.c)

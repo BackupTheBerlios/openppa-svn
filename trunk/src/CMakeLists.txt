@@ -1,40 +1,65 @@
 # Project name
 project(OpenPPA)
 
-#sources
-set(PPACoreExecFiles
-	core/pcctrlnode.cpp
-	core/pcpipectrl.cpp
-	core/pcprocctrl.cpp
-	core/pcpacketfactory.cpp
+# Build our testing hello world plugin
+# add_subdirectory(HelloWorldPlugin)
 
-	misc/dbgprint.cpp
-)
-
-set(PPACoreLibFiles
-	core/pcctrlnode.cpp
-	core/pcpipectrl.cpp
-	core/pcprocctrl.cpp
-	core/pcpacketfactory.cpp
-
-	misc/dbgprint.cpp
-)
-
-set(PPAProxyFiles
-	proxy/ppaproxy.cpp
-
-	misc/dbgprint.cpp
-)
-
+# Then includes
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-# PPACoreExec and PPACoreLib
-add_executable(PPACoreExec ${PPACoreExecFiles})
-add_library(PPACoreLib SHARED ${PPACoreLibFiles})
+# sources
+set(CoreFiles
+	core/pcctrlnode.cpp
+	core/pcpipectrl.cpp
+	core/pcprocctrl.cpp
+	core/pcpacketcenter.cpp)
 
-# PPAProxy 'executable'
-add_executable(PPAProxy ${PPAProxyFiles})
-target_link_libraries(PPAProxy PPACoreLib)
-target_link_libraries(PPACoreExec pthread)
-target_link_libraries(PPACoreLib pthread)
-add_dependencies(PPAProxy PPACoreLib)
+set(ProxyFiles
+	proxy/ppaproxy.cpp
+	proxy/ppfunccenter.cpp
+	proxy/ppfuncpacket.cpp)
+
+set(ProxyGenFiles
+	proxy/proxygen.cpp)
+
+set(ProxyExecGenFiles
+	proxy/proxyexecgen.cpp)
+
+set(MiscFiles
+	misc/dbgprint.cpp)
+
+
+# Hello world
+set(HelloWorldExecFiles
+	HelloWorldPlugin/main.c)
+
+set(HelloWorldLibFiles
+	HelloWorldPlugin/plugin/plugin.c)
+
+# compilation
+
+# PPAified HelloWorldExec
+add_executable(HelloWorldExec
+	${HelloWorldExecFiles})
+
+# link PPAExec with library, so it can be called directly
+add_executable(PPAExec
+	${CoreFiles}
+	${ProxyFiles}
+	${MiscFiles}
+	${HelloWorldLibFiles}
+	${ProxyExecGenFiles})
+
+# PPA shared lib
+add_library(PPALib SHARED
+	${CoreFiles}
+	${ProxyFiles}
+	${MiscFiles}
+	${ProxyGenFiles})
+
+
+target_link_libraries(PPAExec pthread)
+target_link_libraries(PPALib pthread)
+
+# link those helloworld
+target_link_libraries(HelloWorldExec PPALib)
