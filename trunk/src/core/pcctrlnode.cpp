@@ -17,6 +17,7 @@
 
 #include "core/pcctrlnode.h"
 #include "proxy/proxyexecgen.h"
+#include "proxy/ppfunccenter.h"
 
 extern char ** environ;		//?
 // TODO: ITOA 16char, file names
@@ -45,7 +46,6 @@ PCCtrlNode::PCCtrlNode(char* strExec) {
 	bProcessed = true;
 	bParent = true;
 
-	dbgPrint(0,"initPPAExec called");
 	pipeCtrl = new PCPipeCtrl();
 	pipeCtrl -> setAutoDel(true);
 
@@ -91,14 +91,13 @@ void PCCtrlNode::send(char* string) {
 
 //!	Send data of length iLen 
 void PCCtrlNode::send(char* string, int iLen) {
-	dbgPrint(0,"send data: [%d][%d], len=%d", string[0], string[1], iLen);
 	pipeCtrl->send(string,iLen);
 }
 
 //!	Receive null-terminated string, allocates the string
 //	TODO: receive length handling
-void PCCtrlNode::receive(char* string) {
-	int length = pipeCtrl->thr_receive(string);
+int PCCtrlNode::receive(char* string) {
+	return pipeCtrl->thr_receive(string);
 }
 
 
@@ -127,14 +126,10 @@ void PCCtrlNode::sendLoop() {
  *	(spawned exec) Wait for input, when requested to end, terminate child process
  */
 void PCCtrlNode::execHandler() {
-	dbgPrint(0,"execHandl");
 	while(true) {
-		dbgPrint(0,"recv>=%d",iInBuffer);
 		iInBuffer = pipeCtrl->thr_receive(cInBuffer);
-		dbgPrint(0,"recv<=%d",iInBuffer);
 		if(iInBuffer > 2) {
 			//dbgPrint(0, "<THRINP:%s>", cInBuffer);
-			dbgPrint(0, "<THRINP:[%d][%d],%s>", cInBuffer[0], cInBuffer[1], cInBuffer);
 
 			if((cInBuffer[0] == 'q') && (cInBuffer[1] == 'u'))
 				break;
@@ -161,13 +156,12 @@ int main(int argc, char ** argv)
 	}
 	
 	PCCtrlNode * pcn = new PCCtrlNode(argv[1],argv[2]);
+	PPFuncCenter::setPC(pcn);
 
 	pthread_t thrId;
 	if(pthread_create(&thrId, NULL, thrRoutine, pcn)) {
 		dbgPrint(4, "Thread error");
 	}
-	else
-		dbgPrint(0,"pthread created");
 
 	pthread_join(thrId, NULL);
 

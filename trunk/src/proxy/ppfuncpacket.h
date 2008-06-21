@@ -6,11 +6,12 @@ public:
 	PPFuncPacket(char* data);
 	PPFuncPacket(int iParams, char* cFuncName);
 	~PPFuncPacket();
-	void addVar(void* data, int iLen);
+
+	void addParam(void* data, int iLen);
+	int getParam(int iParamNum, void* &cParam);
+
 	int getData(char* &data);
 	char* cDataPack;
-
-	void dummy() {};
 
 private:
 	struct paramPack {

@@ -76,18 +76,23 @@ void PCPipeCtrl::send(char * dat, int length) {
 
 	PCPacketCenter::createPacket(&length, dat, cOutBuffer);
 	write(pipeOut, cOutBuffer, length);
+
+	dbgPrint(0,"<PipeCtrl>Sent %d chars",length);
+	dumpCharArray(dat);
 	//usleep(10000);
 }
 
 //! Receive, buffer = 128B, sleep = 10ms
 int PCPipeCtrl::thr_receive(char * dat) {
-	dbgPrint(0,"thr_receive request");
 	if(PCPacketCenter::testPacket(cInBuffer)){
+
 		PCPacketCenter::readPacket(&iInBuffer, cInBuffer, dat);
 		PCPacketCenter::shiftPacket(cInBuffer);
+
+		dbgPrint(0,"<PipeCtrl>Received %d chars",iInBuffer);
+		dumpCharArray(cInBuffer);
 		return iInBuffer;
 	}
-	dbgPrint(0,"testPacket: unsuccessful");
 
 	while(true) {
 		usleep(10000);
@@ -96,7 +101,8 @@ int PCPipeCtrl::thr_receive(char * dat) {
 		if(iInBuffer == -1)
 			continue;
 
-		dbgPrint(0,"READPACKET routine in");
+		dbgPrint(0,"<PipeCtrl>Received %d chars",iInBuffer);
+		dumpCharArray(cInBuffer);
 
 		PCPacketCenter::readPacket(&iInBuffer, cInBuffer, dat);
 		PCPacketCenter::shiftPacket(cInBuffer);

@@ -24,7 +24,7 @@ public:
 	void execHandler();
 	void send(char* string);
 	void send(char* string, int iLen);
-	void receive(char* string);
+	int receive(char* string);
 
 private:
 	PCPipeCtrl *pipeCtrl;

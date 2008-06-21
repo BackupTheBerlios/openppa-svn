@@ -39,7 +39,7 @@ set(HelloWorldLibFiles
 # compilation
 
 # PPAified HelloWorldExec
-add_executable(HelloWorldExec
+add_executable(helloWorldExec
 	${HelloWorldExecFiles})
 
 # link PPAExec with library, so it can be called directly
@@ -62,4 +62,4 @@ target_link_libraries(PPAExec pthread)
 target_link_libraries(PPALib pthread)
 
 # link those helloworld
-target_link_libraries(HelloWorldExec PPALib)
+target_link_libraries(helloWorldExec PPALib)

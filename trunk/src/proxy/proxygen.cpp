@@ -8,18 +8,26 @@
 
 int printHello() {
 	PPFuncPacket callPacket(0,"printHello");
-	char* dat;
-	int iDatLen;
+	dbgPrint(0,"<printHello>");
+	PPFuncCenter::sendFunc(callPacket);
+	dbgPrint(0,"</printHello>");
 
-	iDatLen = callPacket.getData(dat);
+	char cRetData[128];
+	dbgPrint(0,"querying data");
+	int iRetLen = PPFuncCenter::receiveData(cRetData);
+	dbgPrint(0,"querying data...complete");
+	PPFuncPacket recvPacket(cRetData);
 
-	dbgPrint(0,"RECONSTRUCT***:%s",&dat[4]);
+	char* retDat;
+	int* iRetFnCall;
+	recvPacket.getParam(1,(void*&)retDat);
 
-	PPFuncCenter::sendFunc(dat, iDatLen);
+	iRetFnCall = (int*)retDat;
+
+	dbgPrint(0,"CALL RETURN == %d", *iRetFnCall);
+	
+
 	PPFuncCenter::destroyPC();
-
-	callPacket.dummy();
-
         return 0;
 }
 

@@ -14,6 +14,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdarg.h>
+#include <unistd.h>
+#include <sys/types.h>
 
 void dbgPrint(int lvl, const char* str, ...) {
 	char errStr[10];
@@ -38,6 +40,7 @@ void dbgPrint(int lvl, const char* str, ...) {
 	}
 
 	printf(errStr);
+	printf("[%d] ",getpid());
 
 	va_list ap;
 
@@ -46,4 +49,17 @@ void dbgPrint(int lvl, const char* str, ...) {
 	va_end(ap);
 
 	printf("\n");	
+}
+
+void dumpCharArray(char* cArray){
+	return;
+	printf("<CharArrayDump>");
+	for(int i=0; i < 25; i++) {
+		printf("%c.",cArray[i]); }
+
+	printf("<ByteArrayDump>");
+	for(int i=0; i < 25; i++) {
+		printf("%d.",cArray[i]); }
+
+	printf("<EndDump>\n");
 }
