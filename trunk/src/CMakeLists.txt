@@ -19,6 +19,9 @@ set(ProxyFiles
 	proxy/ppfunccenter.cpp
 	proxy/ppfuncpacket.cpp)
 
+set(ParserFiles
+	parser/paMain.hs)
+
 set(ProxyGenFiles
 	proxy/proxygen.cpp)
 
@@ -37,6 +40,8 @@ set(HelloWorldLibFiles
 	HelloWorldPlugin/plugin/plugin.c)
 
 # compilation
+
+exec_program (ghc ${ParserFiles} -o ppaParser)
 
 # PPAified HelloWorldExec
 add_executable(helloWorldExec

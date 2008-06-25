@@ -152,7 +152,7 @@ int main(int argc, char ** argv)
 		return 1;
 	}
 	else {
-		dbgPrint(0,"Successful init: %s %s \n", argv[1],argv[2]);
+		dbgPrint(0,"Successful init: %s %s", argv[1],argv[2]);
 	}
 	
 	PCCtrlNode * pcn = new PCCtrlNode(argv[1],argv[2]);

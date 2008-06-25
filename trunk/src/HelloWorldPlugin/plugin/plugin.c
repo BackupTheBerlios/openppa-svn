@@ -1,7 +1,8 @@
 #include <stdio.h>
+#include "../pluginapi.h"
 
 int printHello()
 {
-	printf("\nda plugin sez hello\n");
+	printf("\nTeh plagin sez hai\n");
 	return 42;
 }

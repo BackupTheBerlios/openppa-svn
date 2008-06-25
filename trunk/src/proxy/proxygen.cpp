@@ -8,14 +8,10 @@
 
 int printHello() {
 	PPFuncPacket callPacket(0,"printHello");
-	dbgPrint(0,"<printHello>");
 	PPFuncCenter::sendFunc(callPacket);
-	dbgPrint(0,"</printHello>");
 
 	char cRetData[128];
-	dbgPrint(0,"querying data");
 	int iRetLen = PPFuncCenter::receiveData(cRetData);
-	dbgPrint(0,"querying data...complete");
 	PPFuncPacket recvPacket(cRetData);
 
 	char* retDat;
@@ -24,8 +20,7 @@ int printHello() {
 
 	iRetFnCall = (int*)retDat;
 
-	dbgPrint(0,"CALL RETURN == %d", *iRetFnCall);
-	
+	dbgPrint(0,"First parameter(int cast) = %d", *iRetFnCall);	
 
 	PPFuncCenter::destroyPC();
         return 0;

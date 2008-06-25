@@ -13,7 +13,6 @@ void recvFnCall(char* data) {
 	callPacket.getParam(0, (void*&)cFuncName);
 
 	if(!strcmp(cFuncName, "printHello")) {
-		dbgPrint(0,"STRCMP::RECVFNCALL detected");
 		int iRet = printHello();
 		PPFuncPacket callReturn(1,"printHello");
 		callReturn.addParam(&iRet, sizeof(iRet));
