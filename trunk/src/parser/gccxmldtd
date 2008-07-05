@@ -1,0 +1,193 @@
+<!-- I've got this from some mailing list, might be outdated -->
+
+<!ATTLIST [a-z]+ access (private | protected) #IMPLIED>
+Changed to:
+<!ATTLIST [a-z]+ access (private | protected) "public">
+-->
+<!ATTLIST Argument default CDATA #IMPLIED>
+<!ATTLIST Argument name CDATA #IMPLIED>
+<!ATTLIST Argument type IDREF #REQUIRED>
+
+<!ATTLIST ArrayType id ID #REQUIRED>
+<!ATTLIST ArrayType max CDATA #REQUIRED>
+<!ATTLIST ArrayType min "0" #REQUIRED>
+<!ATTLIST ArrayType type IDREF #REQUIRED>
+
+<!ATTLIST Class abstract "1" #IMPLIED>
+<!ATTLIST Class bases CDATA #IMPLIED>
+<!ATTLIST Class context IDREF #REQUIRED>
+<!ATTLIST Class id ID #REQUIRED>
+<!ATTLIST Class incomplete "1" #IMPLIED>
+<!ATTLIST Class location CDATA #REQUIRED>
+<!ATTLIST Class members CDATA #IMPLIED>
+<!ATTLIST Class name CDATA #REQUIRED>
+
+<!ATTLIST Constructor access (private | protected) "public">
+<!ATTLIST Constructor context CDATA #REQUIRED>
+<!ATTLIST Constructor extern "1" #IMPLIED>
+<!ATTLIST Constructor id ID #REQUIRED>
+<!ATTLIST Constructor location CDATA #REQUIRED>
+<!ATTLIST Constructor name CDATA #REQUIRED>
+
+<!ATTLIST Converter const "1" #IMPLIED>
+<!ATTLIST Converter context IDREF #REQUIRED>
+<!ATTLIST Converter extern "1" #IMPLIED>
+<!ATTLIST Converter id ID #REQUIRED>
+<!ATTLIST Converter location CDATA #REQUIRED>
+<!ATTLIST Converter name CDATA #REQUIRED>
+<!ATTLIST Converter returns IDREF #REQUIRED>
+
+<!ATTLIST Destructor access (private | protected) "public">
+<!ATTLIST Destructor context IDREF #REQUIRED>
+<!ATTLIST Destructor extern "1" #IMPLIED>
+<!ATTLIST Destructor id ID #REQUIRED>
+<!ATTLIST Destructor location CDATA #REQUIRED>
+<!ATTLIST Destructor name CDATA #REQUIRED>
+<!ATTLIST Destructor virtual "1" #IMPLIED>
+
+<!ATTLIST EnumValue init CDATA #REQUIRED>
+<!ATTLIST EnumValue name CDATA #REQUIRED>
+<!ATTLIST Enumeration access (private | protected) "public">
+<!ATTLIST Enumeration context CDATA #REQUIRED>
+<!ATTLIST Enumeration id ID #REQUIRED>
+<!ATTLIST Enumeration location CDATA #REQUIRED>
+<!ATTLIST Enumeration name CDATA #REQUIRED>
+
+<!ATTLIST Field access (private | protected) "public">
+<!ATTLIST Field context IDREF #REQUIRED>
+<!ATTLIST Field id ID #REQUIRED>
+<!ATTLIST Field location CDATA #REQUIRED>
+<!ATTLIST Field name CDATA #REQUIRED>
+<!ATTLIST Field type IDREF #REQUIRED>
+
+<!ATTLIST File id ID #REQUIRED>
+<!ATTLIST File name CDATA #REQUIRED>
+
+<!ATTLIST Function context IDREF #REQUIRED>
+<!ATTLIST Function extern "1" #IMPLIED>
+<!ATTLIST Function id ID #REQUIRED>
+<!ATTLIST Function location CDATA #REQUIRED>
+<!ATTLIST Function name CDATA #REQUIRED>
+<!ATTLIST Function returns IDREF #REQUIRED>
+
+<!ATTLIST FunctionType id ID #REQUIRED>
+<!ATTLIST FunctionType returns IDREF #REQUIRED>
+
+<!ATTLIST FundamentalType id ID #REQUIRED>
+<!ATTLIST FundamentalType name CDATA #REQUIRED>
+
+<!ATTLIST Method access (private | protected) "public">
+<!ATTLIST Method const "1" #IMPLIED>
+<!ATTLIST Method context IDREF #REQUIRED>
+<!ATTLIST Method extern "1" #IMPLIED>
+<!ATTLIST Method id ID #REQUIRED>
+<!ATTLIST Method location CDATA #REQUIRED>
+<!ATTLIST Method name CDATA #REQUIRED>
+<!ATTLIST Method pure_virtual "1" #IMPLIED>
+<!ATTLIST Method returns IDREF #REQUIRED>
+<!ATTLIST Method static "1" #IMPLIED>
+<!ATTLIST Method virtual "1" #IMPLIED>
+
+<!ATTLIST MethodType basetype IDREF #REQUIRED>
+<!ATTLIST MethodType id ID #REQUIRED>
+<!ATTLIST MethodType returns IDREF #REQUIRED>
+
+<!ATTLIST Namespace context IDREF #IMPLIED>
+<!ATTLIST Namespace id ID #REQUIRED>
+<!ATTLIST Namespace members CDATA #IMPLIED>
+<!ATTLIST Namespace name CDATA #REQUIRED>
+
+<!ATTLIST OperatorFunction context IDREF #REQUIRED>
+<!ATTLIST OperatorFunction extern "1" #IMPLIED>
+<!ATTLIST OperatorFunction id ID #REQUIRED>
+<!ATTLIST OperatorFunction location CDATA #REQUIRED>
+<!ATTLIST OperatorFunction name CDATA #REQUIRED>
+<!ATTLIST OperatorFunction returns IDREF #REQUIRED>
+
+<!ATTLIST OperatorMethod access (private | protected) "public">
+<!ATTLIST OperatorMethod const "1" #IMPLIED>
+<!ATTLIST OperatorMethod context IDREF #REQUIRED>
+<!ATTLIST OperatorMethod extern "1" #IMPLIED>
+<!ATTLIST OperatorMethod id ID #REQUIRED>
+<!ATTLIST OperatorMethod location CDATA #REQUIRED>
+<!ATTLIST OperatorMethod name CDATA #REQUIRED>
+<!ATTLIST OperatorMethod pure_virtual "1" #IMPLIED>
+<!ATTLIST OperatorMethod returns IDREF #REQUIRED>
+<!ATTLIST OperatorMethod virtual "1" #IMPLIED>
+
+<!ATTLIST PointerType id ID #REQUIRED>
+<!ATTLIST PointerType type IDREF #REQUIRED>
+
+<!ATTLIST ReferenceType id ID #REQUIRED>
+<!ATTLIST ReferenceType type IDREF #REQUIRED>
+
+<!ATTLIST Struct access (private | protected) "public">
+<!ATTLIST Struct bases CDATA #IMPLIED>
+<!ATTLIST Struct context IDREF #REQUIRED>
+<!ATTLIST Struct id ID #REQUIRED>
+<!ATTLIST Struct incomplete "1" #IMPLIED>
+<!ATTLIST Struct location CDATA #REQUIRED>
+<!ATTLIST Struct members CDATA #IMPLIED>
+<!ATTLIST Struct name CDATA #REQUIRED>
+
+<!ATTLIST Typedef context IDREF #REQUIRED>
+<!ATTLIST Typedef id ID #REQUIRED>
+<!ATTLIST Typedef location CDATA #REQUIRED>
+<!ATTLIST Typedef name CDATA #REQUIRED>
+<!ATTLIST Typedef type IDREF #REQUIRED>
+
+<!ATTLIST Unimplemented id ID #REQUIRED>
+<!ATTLIST Unimplemented node CDATA #REQUIRED>
+<!ATTLIST Unimplemented tree_code (187 | 190 | 193) #REQUIRED>
+<!ATTLIST Unimplemented tree_code_name (template_type_parm | 
+typename_type | using_decl) #REQUIRED>
+
+<!ATTLIST Union bases CDATA #REQUIRED>
+<!ATTLIST Union context IDREF #REQUIRED>
+<!ATTLIST Union id ID #REQUIRED>
+<!ATTLIST Union location CDATA #REQUIRED>
+<!ATTLIST Union members CDATA #REQUIRED>
+<!ATTLIST Union name CDATA #REQUIRED>
+
+<!ATTLIST Variable access (private | protected) "public">
+<!ATTLIST Variable context IDREF #REQUIRED>
+<!ATTLIST Variable extern "1" #IMPLIED>
+<!ATTLIST Variable id ID #REQUIRED>
+<!ATTLIST Variable init CDATA #IMPLIED>
+<!ATTLIST Variable location CDATA #REQUIRED>
+<!ATTLIST Variable name CDATA #REQUIRED>
+<!ATTLIST Variable type IDREF #REQUIRED>
+
+<!ELEMENT Argument EMPTY>
+<!ELEMENT Ellipsis EMPTY>
+<!ELEMENT ArrayType EMPTY>
+<!ELEMENT Class EMPTY>
+<!ELEMENT Constructor (Argument | Ellipsis)*>
+<!ELEMENT Convertor EMPTY>
+<!ELEMENT Destructor EMPTY>
+<!ELEMENT EnumValue EMPTY>
+<!ELEMENT Enumeration EnumValue+>
+<!ELEMENT Field EMPTY>
+<!ELEMENT File EMPTY>
+<!ELEMENT Function (Argument | Ellipsis)*>
+<!ELEMENT FunctionType (Argument | Ellipsis)*>
+<!ELEMENT FundamentalType EMPTY>
+<!ELEMENT Method (Argument | Ellipsis)*>
+<!ELEMENT MethodType (Argument | Ellipsis)*>
+<!ELEMENT Namespace EMPTY>
+<!ELEMENT OperatorFunction (Argument | Ellipsis)*>
+<!ELEMENT OperatorMethod (Argument | Ellipsis)*>
+<!ELEMENT PointerType EMPTY>
+<!ELEMENT ReferenceType EMPTY>
+<!ELEMENT Struct EMPTY>
+<!ELEMENT Typedef EMPTY>
+<!ELEMENT Unimplemented EMPTY>
+<!ELEMENT Union EMPTY>
+<!ELEMENT Variable EMPTY>
+<!ELEMENT GCC_XML (ArrayType | Class | Constructor | Convertor | 
+Destructor | Enumeration | Field | File | Function | FunctionType | 
+FundementalType | Method | MethodType | Namespace | OperatorFunction 
+| OperatorMethod | PointerType | RerferenceType | Struct | Typedef | 
+Unimplemented | Union | Variable)+>
+
+
