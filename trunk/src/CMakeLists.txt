@@ -9,67 +9,41 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 # sources
 set(CoreFiles
-	core/pcctrlnode.cpp
+	core/pcplugentity.cpp
 	core/pcpipectrl.cpp
 	core/pcprocctrl.cpp
 	core/pcpacketcenter.cpp)
 
 set(ProxyFiles
-	proxy/ppaproxy.cpp
-	proxy/ppfunccenter.cpp
-	proxy/ppfuncpacket.cpp)
-
-set(ParserFiles
-	parser/parsemain.cpp
-	parser/pafuncblock.cpp
-	parser/pafuncobject.cpp
-	parser/paargobject.cpp)
-
-set(ProxyGenFiles
-	proxy/proxygen.cpp)
-
-set(ProxyExecGenFiles
-	proxy/proxyexecgen.cpp)
+	proxy/ppappsender.cpp
+	proxy/ppappreceiver.cpp
+	proxy/ppcoreplugbase.cpp)
 
 set(MiscFiles
 	misc/dbgprint.cpp)
 
 
-# Hello world
-set(HelloWorldExecFiles
-	HelloWorldPlugin/main.c)
-
-set(HelloWorldLibFiles
-	HelloWorldPlugin/plugin/plugin.c)
-
-# compilation
-
-# PPAified HelloWorldExec
-add_executable(helloWorldExec
-	${HelloWorldExecFiles})
 
 # link PPAExec with library, so it can be called directly
-add_executable(PPAExec
+add_executable(PPACoreExec
 	${CoreFiles}
+	${MiscFiles})
+
+add_library(PPACoreLib SHARED
+	${CoreFiles}
+	${MiscFiles})
+
+add_executable(PPAProxyAppLib		# add_library!
 	${ProxyFiles}
 	${MiscFiles}
-	${HelloWorldLibFiles}
-	${ProxyExecGenFiles})
+)
 
-# PPA shared lib
-add_library(PPALib SHARED
-	${CoreFiles}
+add_library(PPAProxyPlugLib SHARED
 	${ProxyFiles}
 	${MiscFiles}
-	${ProxyGenFiles})
+)
 
-
-target_link_libraries(PPAExec pthread)
-target_link_libraries(PPALib pthread)
-
-# link those helloworld
-target_link_libraries(helloWorldExec PPALib)
-
-# parser
-add_executable(PPAParser ${ParserFiles} ${MiscFiles})
-target_link_libraries(PPAParser expat)
+target_link_libraries(PPACoreExec dl)
+target_link_libraries(PPACoreLib dl)
+target_link_libraries(PPAProxyAppLib dl)
+target_link_libraries(PPAProxyPlugLib dl)

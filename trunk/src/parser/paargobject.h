@@ -4,7 +4,7 @@
 // Description: 
 //
 //
-// Author: pista <pista@pista-desktop>, (C) 2008
+// Author: Štefan Sakalík <rabbit64@users.berlios.de>, (C) 2008
 //
 // Copyright: See COPYING file that comes with this distribution
 //
@@ -18,7 +18,7 @@
 #include <string>
 
 /**
-	@author pista <pista@pista-desktop>
+	@author Štefan Sakalík <rabbit64@users.berlios.de>
 */
 class PAArgObject {
 public:
@@ -27,6 +27,11 @@ public:
 
 	void setSize(int iSize);
 	void setAlign(int iAlign);
+
+	std::string getArgSpec() { return *strArgSpec; }
+	std::string getArgId() { return *strArgId; }
+	std::string getArgRef() { return *strArgRef; }
+
 private:
 	std::string* strArgSpec;	// Pointer, Reference, FundamentalType
 	std::string* strArgId;		// Id of the type

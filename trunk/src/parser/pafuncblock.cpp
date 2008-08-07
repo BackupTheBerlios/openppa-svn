@@ -4,7 +4,7 @@
 // Description: 
 //
 //
-// Author: pista <pista@pista-desktop>, (C) 2008
+// Author: Štefan Sakalík <rabbit64@users.berlios.de>, (C) 2008
 //
 // Copyright: See COPYING file that comes with this distribution
 //
@@ -30,48 +30,61 @@ PAFuncBlock::PAFuncBlock()
 	iFunc = iArg = 0;
 }
 
-void PAFuncBlock::addFunc(char* cFuncName, char* cRet) {
+void PAFuncBlock::addFunc(PAFuncObject *func) {
 	if(iFunc >= FUNCARRLIMIT) {
 		dbgPrint(3,"PAFuncBlock too many functions");
 		return;
 	}
 
-	PAFuncObject* fnObj = new PAFuncObject;
-	fnObjArray[iFunc] = fnObj;
-
-	fnObj->setFuncName(cFuncName);
-	fnObj->setRet(cRet);
-
-	iFunc++;
-}
-
-void PAFuncBlock::addFuncArg(char* cArgName, char* cArg) {
-	fnObjArray[iFunc-1]->setNextArg(cArgName, cArg);
+	fnObjArray[iFunc++] = func;
 }
 
 // Arguments
-void PAFuncBlock::addArg(char* cArgSpec, char* cArgId, char* cArgRef) {
+void PAFuncBlock::addArg(PAArgObject *arg) {
 	if(iArg >= ARGARRLIMIT) {
 		dbgPrint(3,"PAFuncBlock too many arguments");
 		return;
 	}
 
-	argObjArray[iArg] = new PAArgObject(cArgSpec, cArgId, cArgRef);
-	iArg++;
+	argObjArray[iArg++] = arg;
 }
 
-void PAFuncBlock::setArgSize(int iSize) {
-	argObjArray[iArg-1]->setSize(iSize);
+PAArgObject* PAFuncBlock::getArgById(std::string strId) {
+	for(int i=0; i < iArg; i++) {
+		//dbgPrint(0,"id=<%s> : <%s>",argObjArray[i]->getArgId().c_str(), strId.c_str());
+		if(!argObjArray[i]->getArgId().compare(strId))
+			return argObjArray[i];
+	}
+
+	dbgPrint(1,"PAFuncBlock::getArgById: Argument not found.");
+	return NULL;	//nothing found
 }
 
-void PAFuncBlock::setArgAlign(int iAlign) {
-	argObjArray[iArg-1]->setAlign(iAlign);
+PAFuncObject* PAFuncBlock::getFuncByName(std::string strFnName) {
+	for(int i=0; i < iArg; i++) {
+		if(!fnObjArray[i]->getFuncName().compare(strFnName))
+			return fnObjArray[i];
+	}
+
+	dbgPrint(1,"PAFuncBlock::getArgById: Argument not found.");
+	return NULL;	//nothing found
 }
 
 void PAFuncBlock::listFns() {
 	for(int i=0; i < iFunc; i++) {
-		dbgPrint(0,"Function: %s",fnObjArray[i]->getFuncName());
-		fnObjArray[i]->listArgs();
+		dbgPrint(0,"Function: %s",fnObjArray[i]->getFuncName().c_str());
+		for(int j=0; j < fnObjArray[i]->getArgNum(); j++) {
+			char* argName; char* arg;
+			fnObjArray[i]->getArg(j, (const char*&)argName, (const char *&)arg);
+			//fnObjArray[i]->getArg(0,NULL,NULL);
+			std::string argStr(arg);
+
+			PAArgObject* arg2 = getArgById(argStr);
+			argStr;
+
+			dbgPrint(0," arg = %s::%s -> %s", argName, arg, arg2->getArgSpec().c_str());
+		}
+		//fnObjArray[i]->listArgs();
 	}
 }
 

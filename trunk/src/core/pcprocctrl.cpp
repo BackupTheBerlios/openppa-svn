@@ -21,16 +21,20 @@
 
 
 //! Create child process, give it files
-void PCProcCtrl::newProcess(char* cExecName, char* cInPipe, char* cOutPipe) {
+void PCProcCtrl::newProcess(char* cExecName, char* cInPipe, char* cOutPipe, char* cProxyPath, char* cPluginPath) {
 	iChildProc = fork();
-	if(!iChildProc)// This is child
+	if(!iChildProc) {// This is child
 		// PPACore expects Input and Output in this order
 		// it's vice-versa from PPACoreLib's point of view
-		if(execl(cExecName, cExecName, cOutPipe, cInPipe, 0) == -1)
+		if(execl(cExecName, cExecName, cOutPipe, cInPipe, cProxyPath, cPluginPath,  0) == -1)
 			dbgPrint(3,"Exec Fault: tried exec (%s, pipes: %s, %s)",cExecName,cInPipe,cOutPipe);
 
-	else
-		dbgPrint(0,"PPACoreLib ended\n");
+		else
+			dbgPrint(0,"PPACoreLib ended\n");
+	} else {	//this is parent
+		usleep(100000);	
+		dbgPrint(0, "parent cont.");
+	}
 }
 
 //! TODO: Wait until child terminates (PARTIAL)

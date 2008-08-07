@@ -4,7 +4,7 @@
 // Description: 
 //
 //
-// Author: pista <pista@pista-desktop>, (C) 2008
+// Author: Štefan Sakalík <rabbit64@users.berlios.de>, (C) 2008
 //
 // Copyright: See COPYING file that comes with this distribution
 //
@@ -36,22 +36,13 @@ void PAFuncObject::setFuncName(char* cFnName) {
 	strFuncName = new string(cFnName);
 }
 
-const char* PAFuncObject::getFuncName() {
-	return strFuncName->c_str();
+string PAFuncObject::getFuncName() {
+	return *strFuncName;
 }
 
 void PAFuncObject::listArgs() {
 	for(int i=0; i < iArgs; i++)
 		dbgPrint(0," Arg: %s -> %s",strArgNames[i]->c_str(),strArgs[i]->c_str());
-}
-
-void PAFuncObject::beginSetArg(char* cArgName, char* cArg) {
-	cleanupArgs();
-
-    iArgs = 0;
-    strArgs[0] = new string(cArg);
-	strArgNames[0] = new string(cArgName);
-    iArgs++;
 }
 
 void PAFuncObject::setNextArg(char* cArgName, char* cArg) {
@@ -88,12 +79,29 @@ void PAFuncObject::cleanupArgs() {
 
 	iArgs = 0;
 }
+
+int PAFuncObject::getArgNum() {
+	return iArgs;
+}
+
+void PAFuncObject::getArg(int iArgNum, const char *& cArgName, const char *&  cArg) {
+	if((iArgNum >= iArgs) || (iArgNum < 0)) {
+		dbgPrint(2,"PAFuncObject::getArg: Argument out of range");
+		return;
+	}
+	cArgName = strArgNames[iArgNum]->c_str();
+	cArg = strArgs[iArgNum]->c_str();
+}
  
 void PAFuncObject::setRet(char* cRet) {
 	if(strRet != NULL)
 		delete strRet;
 
 	strRet = new string(cRet);
+}
+
+string PAFuncObject::getRet() {
+	return *strRet;
 }
 
 PAFuncObject::~PAFuncObject()

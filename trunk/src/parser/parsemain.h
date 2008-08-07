@@ -2,12 +2,10 @@
 #define PARSEMAIN_H_
 
 #include "parser/pafuncblock.h"
+#include "parser/pafuncobject.h"
+#include "parser/paargobject.h"
 
-struct FnObj {
-	char* cFnName;
-	char * cRet;
-	char ** cArgs;
-};
+#include "proxygen/pgmain.h"
 
 bool bParInFunc = false;
 
@@ -19,5 +17,6 @@ void fnArgHandler(const char **attr);
 void argHandler(const char *cSpec, const char **attr);
 
 PAFuncBlock fnBlock;
+PAFuncObject *fnCurrent;
 
 #endif /* PARSEMAIN_H_ */

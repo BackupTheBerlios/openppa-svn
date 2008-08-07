@@ -63,3 +63,12 @@ void dumpCharArray(char* cArray){
 
 	printf("<EndDump>\n");
 }
+
+void cvtIntTo2B(int* from, char* to) {
+	memcpy(to, from, 2);
+}
+
+void cvtIntFrom2B(int* to, char* from) {
+	*to = 0;
+	memcpy(to, from, 2);
+}

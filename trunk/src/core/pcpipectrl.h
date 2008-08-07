@@ -17,6 +17,8 @@ public:
 	void setAutoDel(bool del) { bDel = del;	}
 
 	void send(char * dat, int length);
+	void receive(char* data, int dataLen);
+
 	int thr_receive(char * dat);
 
 	char* getInPipe() { return cInPipe; }

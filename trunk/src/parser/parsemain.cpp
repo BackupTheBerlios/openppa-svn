@@ -45,7 +45,14 @@ int main(int argv, char ** argc) {
   } while (!done);
   XML_ParserFree(parser);
 
-	fnBlock.listFns();
+	PGMain pGen;
+	char dat[128];
+	//fseek(stdin,0,SEEK_END);
+	//printf("input function:");
+	//while(scanf("%s\n", dat) == 1);
+	//printf("got=%s\n",dat);	
+	//pGen.genCode(std::string(dat));
+	pGen.genCode("dumpCharArray");
 
   return 0;
 }
@@ -84,7 +91,9 @@ void start(void *data, const char *el, const char **attr) {
 	// if it is some kind of type specifier
 	else if(!strcmp(el,"PointerType")     ||
 		    !strcmp(el,"ReferenceType")   ||
-	        !strcmp(el,"FundamentalType")) {
+	        !strcmp(el,"FundamentalType") ||
+			!strcmp(el,"CvQualifiedType") ||
+			!strcmp(el,"ArrayType")	) {
 		argHandler(el, attr);
 	}
 
@@ -117,7 +126,13 @@ void fnHandler(const char **attr) {
 	if(!cFnName || !cRet)
 		dbgPrint(1,"ParseMain:fnHandler NULL function name or argument");
 
-	fnBlock.addFunc((char*)cFnName, (char*)cRet);
+	PAFuncObject *fnObj = new PAFuncObject();
+	fnCurrent = fnObj;
+
+	fnObj->setFuncName((char*)cFnName);
+	fnObj->setRet((char*)cRet);
+
+	fnBlock.addFunc(fnObj);
 }
 
 void fnArgHandler(const char **attr) {
@@ -136,7 +151,7 @@ void fnArgHandler(const char **attr) {
 	if(!cArgName || !cArgType)
 		dbgPrint(1,"ParseMain:fnArgHandler NULL parameter name or type");
 
-	fnBlock.addFuncArg((char*)cArgName, (char*)cArgType);
+	fnCurrent->setNextArg((char*)cArgName, (char*)cArgType);
 }
 
 void argHandler(const char *cSpec, const char **attr) {
@@ -173,5 +188,7 @@ void argHandler(const char *cSpec, const char **attr) {
 	if(!attr[i])	// type or name not found
 		dbgPrint(2,"ParseMain::argHandler: Type not found");
 
-	fnBlock.addArg((char*)cSpec, (char*)cArgId, (char*)cArgType);
+	PAArgObject *argObj = new PAArgObject((char*)cSpec, (char*)cArgId, (char*)cArgType);
+
+	fnBlock.addArg(argObj);
 }

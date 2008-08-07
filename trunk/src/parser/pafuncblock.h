@@ -4,7 +4,7 @@
 // Description: 
 //
 //
-// Author: pista <pista@pista-desktop>, (C) 2008
+// Author: Štefan Sakalík <rabbit64@users.berlios.de>, (C) 2008
 //
 // Copyright: See COPYING file that comes with this distribution
 //
@@ -15,22 +15,22 @@
 #include "parser/pafuncobject.h"
 #include "parser/paargobject.h"
 
+#include <string>
+
 /**
-	@author pista <pista@pista-desktop>
+	@author Štefan Sakalík <rabbit64@users.berlios.de>
 */
 class PAFuncBlock {
 public:
     PAFuncBlock();
     ~PAFuncBlock();
 
-	// Functios	(variable is almost nullary function, no need for new class [or inherit?])
-	void addFunc(char* cFuncName, char* cRet);
-	void addFuncArg(char* cArgName, char* cArg);
+	// Functios	(variable is _almost_ nullary function, no need for new class [or inherit?])
+	void addFunc(PAFuncObject *func);
+	void addArg(PAArgObject *arg);	// Arguments (types)
 
-	// Arguments
-	void addArg(char* cArgSpec, char* cArgId, char* cArgRef);
-	void setArgSize(int iSize);
-	void setArgAlign(int iAlign);
+	PAArgObject* getArgById(std::string strId);
+	PAFuncObject* getFuncByName(std::string strFnName);
 
 	void listFns();
 

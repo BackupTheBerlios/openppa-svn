@@ -8,7 +8,7 @@ PCCtrlNode* pcn = NULL;
 
 //! Send compressed arglist to PC
 
-void PPFuncCenter::sendFunc(PPFuncPacket &fnPack){
+void PPFuncCenter::sendFunc(PPFuncPacket &fnPack) {
 	char* dat;
 	int iDatLen;
 

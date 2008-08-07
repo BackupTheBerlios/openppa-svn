@@ -15,7 +15,7 @@ public:
 	PCProcCtrl() {};
 	~PCProcCtrl() {};
 
-	void newProcess(char* cExecName, char* cInPipe, char* cOutPipe); 
+	void newProcess(char* cExecName, char* cInPipe, char* cOutPipe, char* cProxyPath, char* cPluginPath); 
 	void waitChildEnd();
 private:
 	int iChildProc;
