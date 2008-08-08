@@ -12,7 +12,7 @@
 #ifndef PPFUNPACK_H
 #define PPFUNPACK_H
 
-#include <ppvarpack.h>
+#include "ppvarpack.h"
 
 /**
 	@author Štefan Sakalík <rabbit64@users.berlios.de>

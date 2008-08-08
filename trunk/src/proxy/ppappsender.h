@@ -18,9 +18,13 @@
 */
 class PPAppSender{
 public:
+	// my totaly awesome function
+
+	// sender functions
     PPAppSender();
     ~PPAppSender();
 
+	// proxy fn: int function
 	void loadLibSymbols(char* coreLibPath);
 	void loadPlugin(char* proxyPath, char* pluginPath);
 	void closeLib();
@@ -35,12 +39,7 @@ private:
 	//void (PCPlugEntity::*receivePtr)(int opId, char* data, int& dataLen);
 
 	typedef PCPlugEntity* (*CoreIfaceFnType) (char* proxyPath, char* plugPath);
-	typedef int (*CoreEntSend) (PCPlugEntity* ent, char* data, int dataLen);
-	typedef void (*CoreEntReceive) (PCPlugEntity* ent, int opId, char* data, int& dataLen);
-
 	CoreIfaceFnType coreIfaceFn;
-	CoreEntSend coreEntSendFn;
-	CoreEntReceive coreEntReceiveFn;
 };
 
 #endif

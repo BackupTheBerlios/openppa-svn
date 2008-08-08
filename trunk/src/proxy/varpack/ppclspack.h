@@ -12,7 +12,7 @@
 #ifndef PPCLSPACK_H
 #define PPCLSPACK_H
 
-#include <ppvarpack.h>
+#include "ppvarpack.h"
 
 /**
 	@author Štefan Sakalík <rabbit64@users.berlios.de>
