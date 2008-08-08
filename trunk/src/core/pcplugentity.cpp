@@ -25,16 +25,12 @@ PCPlugEntity::PCPlugEntity(char* execPath, char* proxyPath, char* pluginPath)
 
 	procCtrl = new PCProcCtrl();
 	procCtrl->newProcess(execPath, pipeCtrl->getInPipe(), pipeCtrl->getOutPipe(), proxyPath, pluginPath);
-
-dbgPrint(0,"hello");
-
 	pipeCtrl->openWritePipe();
-
-dbgPrint(0,"hello2");
 }
 
 PCPlugEntity::PCPlugEntity(char* pipeIn, char* pipeOut)
 {
+	opIdArrayLength = 0;
 	bIsPlugCreator = false;
 
 	pipeCtrl = new PCPipeCtrl(pipeIn, pipeOut);
@@ -100,6 +96,7 @@ void PCPlugEntity::rsend(char* data, int dataLen, int opId) {
 }
 
 void PCPlugEntity::addOpId(int opId) {
+	dbgPrint(0, "adding op id %d", opId);
 	if(opIdArrayLength)
 		dbgPrint(2,"IMPL ERROR: opId >0");
 
@@ -138,23 +135,6 @@ PCPlugEntity::~PCPlugEntity()
 
 #include <stdio.h>
 
-extern "C" void PCPlugEntityRSend(PCPlugEntity* ent, char* data, int dataLen, int opId) {
-	ent->rsend(data, dataLen, opId);
-}
-
-extern "C" int PCPlugEntityRReceive(PCPlugEntity* ent, char*& data, int& dataLen) {
-	return ent->rreceive(data, dataLen);
-}
-
-
-extern "C" int PCPlugEntitySend(PCPlugEntity* ent, char* data, int dataLen) {
-	return ent->send(data, dataLen);
-}
-
-extern "C" void PCPlugEntityReceive(PCPlugEntity* ent, int opId, char*& data, int& dataLen) {
-	ent->receive(opId, data, dataLen);
-}
-
 extern "C" PCPlugEntity* createPlugin(char* proxyPath, char* plugPath) {
 	char execPath[] = EXEC_PATH; 
 	return new PCPlugEntity(execPath, proxyPath, plugPath);
@@ -176,23 +156,11 @@ int main(int argc, char ** argv)
 	if(!proxyLibHandle)
 		dbgPrint(2,"core::main can't open proxy lib, %s", argv[3]);
 
-	typedef void (*CoreEntRSend) (PCPlugEntity* ent, char* data, int dataLen, int opId);
-	typedef int (*CoreEntRReceive) (PCPlugEntity* ent, char*& data, int& dataLen);
-	typedef void (*MainLoopType) (PCPlugEntity* ent, CoreEntRSend rsendFn, CoreEntRReceive rreceiveFn);
-
+	typedef void (*MainLoopType) (PCPlugEntity* ent);
 	MainLoopType mainLoopPtr = (MainLoopType)dlsym(proxyLibHandle, "mainLoop");
 	if(!mainLoopPtr)
 		dbgPrint(2,"core::main can't find mainLoopPtr symbol");
 
-	mainLoopPtr(&ent, PCPlugEntityRSend, PCPlugEntityRReceive);
-	
-/*
-	pthread_t thrId;
-	if(pthread_create(&thrId, NULL, thrRoutine, pcn)) {
-		dbgPrint(4, "Thread error");
-	}
-
-	pthread_join(thrId, NULL);
-*/
+	mainLoopPtr(&ent);
 	return 0;
 }

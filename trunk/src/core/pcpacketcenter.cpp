@@ -47,7 +47,7 @@ void PCPacketCenter::createHeader(int packetType,
 void PCPacketCenter::parseHeader(char* headerData,
                                  int& packetType,
                                  int& opId,
-                                 char&* dataPart,
+                                 char*& dataPart,
                                  int& dataPartLen) {
 	if(headerData[0] != 'P' && headerData[1] != 'P' && headerData[2] != 'A') {
 		dbgPrint(2, "PCPacketHeader::parseHeader PPA id mismatch");
