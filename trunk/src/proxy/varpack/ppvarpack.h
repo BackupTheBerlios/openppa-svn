@@ -19,26 +19,30 @@
 /**
 	@author Štefan Sakalík <rabbit64@users.berlios.de>
 */
+
 class PPVarPack{
 public:
 	PPVarPack();
 	~PPVarPack();
 
 	virtual int getCompressSize() =0;
-	virtual int compress(char* dataPtr);
-	virtual void addNode(VarPack& vPack);
-	virtual VarPack& operator[] (const int nIndex);		// ++ decompression
-	virtual void setData(char* dataPtr, int dataLen);
+	virtual int compress(char* dataPtr) =0;
+	virtual void addNode(PPVarPack* vPack) =0;
+	virtual PPVarPack*& operator[] (const int nIndex) =0;		// ++ decompression
+	virtual void setData(char* dataPtr, int dataLen) =0;
 
 	// -- decompression --
-	virtual int decompress(int iSize, char* data);
-	virtual void getData(char*& data, int& dataLen);
+	virtual int decompress(int iSize, char* data) =0;
+	virtual int decompressInfo(int iSize, char* data) =0;
+	virtual void getData(char*& data, int& dataLen) =0;
 
-private:
+protected:
 	// variables
-	VarPack varPackArray[20];// more VarPacks
-	void* data;    // or data. can use union
+	PPVarPack* varPackArray[20];// more VarPacks
+	char* data;    // or data. can use union
 	int size;
 };
+PPVarPack* mkVarPack(char* dataPtr, int& size);
+PPVarPack* mkVarPackInfo(char* dataPtr, int& size);
 
 #endif

@@ -71,7 +71,7 @@ void PCPipeCtrl::setIOPipes(char * cPInp, char * cPOut) {
 //! TODO: length of sent data
 void PCPipeCtrl::send(char * dat, int length) {
 	if(length > 128) {
-		dbgPrint(4,"PipeCtrl:send -> too big packet");
+		dbgPrint(4,"PipeCtrl:send -> too big packet(%d)", length);
 		return;
 	}
 
@@ -96,7 +96,7 @@ void PCPipeCtrl::receive(char* data, int dataLen) {
 			fds.fd=pipeIn;
 			fds.events=POLLIN;
 
-			poll(&fds, NULL, 1000);
+			poll(&fds, 0, 1000);		// this does not work!
 			continue;
 		}
 

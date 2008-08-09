@@ -17,7 +17,13 @@ set(CoreFiles
 set(ProxyFiles
 	proxy/ppappsender.cpp
 	proxy/ppappreceiver.cpp
-	proxy/ppcoreplugbase.cpp)
+	proxy/ppcoreplugbase.cpp
+
+	proxy/varpack/ppvarpack.cpp
+	proxy/varpack/ppclspack.cpp
+	proxy/varpack/ppptrpack.cpp
+	proxy/varpack/ppfunpack.cpp
+	proxy/ppcallpack.cpp)
 
 set(MiscFiles
 	misc/dbgprint.cpp)

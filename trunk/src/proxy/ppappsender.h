@@ -18,7 +18,8 @@
 */
 class PPAppSender{
 public:
-	// my totaly awesome function
+	// sample send fn
+	int hello(int iData);
 
 	// sender functions
     PPAppSender();

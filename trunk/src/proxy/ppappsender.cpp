@@ -12,6 +12,34 @@
 #include "ppappsender.h"
 #include <dlfcn.h>
 #include "misc/dbgprint.h"
+#include "proxy/ppcallpack.h"
+#include "proxy/varpack/ppptrpack.h"	// others are included
+#include "proxy/varpack/ppfunpack.h"
+
+int PPAppSender::hello(int iData) {
+	dbgPrint(0, "calling hello function");
+
+	PPClsPack args;
+	args.setSize(2);
+	args[0] = new PPPtrPack;
+
+	PPFunPack *fnPak = new PPFunPack;
+	args[0]->addNode(fnPak);
+	(*args[0])[0]->setData((char*)&iData, 4);
+	args[1] = new PPFunPack;
+	int x = 112;
+	args[1]->setData((char*)&x, 4);
+ 
+	PPCallPack callPack(&args, "hello");
+
+	char* dataSend;
+	int dataLen = callPack.compress(dataSend);
+
+	int opId = coreEnt->send(dataSend, dataLen);
+	// MEMORY LEAK!
+	coreEnt->receive(opId, dataSend, dataLen);
+	// process return
+}
 
 PPAppSender::PPAppSender()
 {
@@ -47,6 +75,9 @@ void PPAppSender::closeLib() {
 }
 
 void PPAppSender::sendSomeStuff() {
+	hello(4);
+
+	return;
 	dbgPrint(0, "Sending some stuff...");
 	char data[] = "Sam Staf";
 	int dataLen = 9;

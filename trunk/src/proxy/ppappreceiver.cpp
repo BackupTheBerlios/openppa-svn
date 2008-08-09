@@ -12,6 +12,8 @@
 #include "ppappreceiver.h"
 #include "misc/dbgprint.h"
 
+#include "proxy/ppcallpack.h"
+
 PPAppReceiver::PPAppReceiver(PCPlugEntity* ent)
 {
 	coreEnt = ent;
@@ -19,6 +21,9 @@ PPAppReceiver::PPAppReceiver(PCPlugEntity* ent)
 	char* data; int dataLen;
 	ent->rreceive(data, dataLen);
 	dbgPrint(0, "Data received: %s", data);
+
+	PPCallPack pak;
+	pak.decompressInfo(data);
 }
 
 

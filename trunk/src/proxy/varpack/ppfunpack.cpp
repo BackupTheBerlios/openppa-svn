@@ -11,6 +11,7 @@
 //
 #include "ppfunpack.h"
 #include "misc/dbgprint.h"
+#include <string.h>
 
 PPFunPack::PPFunPack()
  : PPVarPack()
@@ -29,16 +30,16 @@ int PPFunPack::getCompressSize() {
 int PPFunPack::compress(char* dataPtr) {
 	dataPtr[0] = FUN_ID;
 	cvtIntTo2B(&size, dataPtr + 1);
-	memcpy(dataPtr+2, data, size);
+	memcpy(dataPtr+3, data, size);
 
 	return 3 + size;
 }
 
-void PPFunPack::addNode(VarPack& vPack) {
+void PPFunPack::addNode(PPVarPack* vPack) {
 	dbgPrint(1, "PPFunPack::addNode not implemented");
 }
 
-VarPack& PPFunPack::operator[] (const int nIndex) {
+PPVarPack*& PPFunPack::operator[] (const int nIndex) {
 	dbgPrint(1, "PPFunPack::operator[] not implemented");
 }
 
@@ -49,11 +50,25 @@ void PPFunPack::setData(char* dataPtr, int dataLen) {
 
 int PPFunPack::decompress(int iSize, char* data) {
 	size = iSize;
-	this.data = data;
+	this->data = data;
+	return iSize;
+}
+
+int PPFunPack::decompressInfo(int iSize, char* data) {
+	dbgPrint(0, "PPFunPack data size=%d", iSize);
+	if(iSize == 0);
+	else if( iSize == 1)
+		dbgPrint(0, "PPFunPack data = [%d]", data[0]);
+
+	else
+		dbgPrint(0, "PPFunPack data = [%d, %d,...]", data[0], data[1]);
+
+	size = iSize;
+	this->data = data;
 	return iSize;
 }
 
 void PPFunPack::getData(char*& data, int& dataLen) {
-	data = this.data;
+	data = this->data;
 	dataLen = size;
 }

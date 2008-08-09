@@ -65,6 +65,7 @@ void PCPlugEntity::receive(int opId, char*& data, int& dataLen) {
 	}
 	delOpId(recvOpId);
 
+	data = new char[dataLen];		// TODO: memory leak
 	pipeCtrl->receive(data, dataLen);
 
 	delete [] headerData;
@@ -78,6 +79,8 @@ int PCPlugEntity::rreceive(char*& data, int& dataLen) {
 	// WARNING: data points to UNUSABLE memory block
 	PCPacketCenter::parseHeader(headerData, packetType, opId, data, dataLen);
 	addOpId(opId);
+
+	data = new char[dataLen];	// TODO: memory leak
 	pipeCtrl->receive(data, dataLen);
 
 	delete [] headerData;

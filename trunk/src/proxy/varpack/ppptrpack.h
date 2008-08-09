@@ -25,12 +25,14 @@ public:
 
 	int getCompressSize();
 	int compress(char* dataPtr);
-	void addNode(VarPack& vPack);
-	VarPack& operator[] (const int nIndex);		// + decompression
+	void addNode(PPVarPack* vPack);
+	PPVarPack*& operator[] (const int nIndex);		// + decompression
 	void setData(char* dataPtr, int dataLen);
 
 	// -- decompression --
 	int decompress(int iSize, char* data);
+	int decompressInfo(int iSize, char* data);
+
 	void getData(char*& data, int& dataLen);
 
 private:

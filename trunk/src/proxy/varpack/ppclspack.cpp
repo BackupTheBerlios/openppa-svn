@@ -25,7 +25,7 @@ int PPClsPack::getCompressSize() {
 	int ttl = 3;
 
 	for(int i=0; i < size; i++) {
-		ttl += this[i].getCompressSize;
+		ttl += (*this)[i]->getCompressSize();
 	}
 	return ttl;
 }
@@ -33,30 +33,42 @@ int PPClsPack::getCompressSize() {
 int PPClsPack::compress(char* dataPtr) {
 	int ttl = 0;
 
-	dataPtr[0] = CLS_ID;
-	cvtIntTo2B(size,dataPtr + 1);
+	dataPtr[0] = (char)CLS_ID;
+	cvtIntTo2B(&size,dataPtr + 1);
+
 	dataPtr += 3;
 	ttl += 3;
 
+	if(size == 0)
+		dbgPrint(2, "PPClsPack::compress size of class is 0");
+
 	for(int i=0; i < size; i++) {
-		int outSize = this[i].compress(dataPtr);
+		int outSize = (*this)[i]->compress(dataPtr);
 		dataPtr += outSize;
-		ttl + = outSize;
+		ttl += outSize;
 	}
+
+	dbgPrint(0, "CLASS_COMPRESSION_COMPLETE");
+	dumpCharArray(dataPtr - ttl);
 
 	return ttl;
 }
 
-void PPClsPack::addNode(VarPack& vPack) {
+void PPClsPack::addNode(PPVarPack* vPack) {
 	dbgPrint(2, "PPClsPack::addNode not implemented");
 }
 
-VarPack& PPClsPack::operator[] (const int nIndex) {		// ++ decompression
+
+PPVarPack*& PPClsPack::operator[] (const int nIndex) {		// ++ decompression
 	return varPackArray[nIndex];
 }
 
 void PPClsPack::setData(char* dataPtr, int dataLen) {
 	dbgPrint(2, "PPClsPack::setData not implemented");
+}
+
+void PPClsPack::setSize(int iSize) {
+	size = iSize;
 }
 
 // -- decompression --
@@ -66,14 +78,35 @@ int PPClsPack::decompress(int iSize, char* data) {
 	size = iSize;
 	for(int i=0; i < iSize; i++) {
 		int nextSize;
-		this[i] = &mkVarPack(data, nextSize);
+		
+		(*this)[i] = mkVarPack(data, nextSize);
 
 		data += nextSize;
 		ttl += nextSize;
 	}
 
-	this.data = data;
+	(*this).data = data;
 	return ttl;
+}
+
+int PPClsPack::decompressInfo(int iSize, char* data) {
+	dbgPrint(0, "PPClsPack array size=%d", iSize);
+	int ttl=0;
+
+	size = iSize;
+	for(int i=0; i < iSize; i++) {
+		int nextSize;
+		
+		(*this)[i] = mkVarPackInfo(data, nextSize);
+		dumpCharArray(data);
+
+		data += nextSize;
+		ttl += nextSize;
+	}
+
+	(*this).data = data;
+	return ttl;
+
 }
 
 void PPClsPack::getData(char*& data, int& dataLen) {
