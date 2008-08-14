@@ -43,10 +43,20 @@ int PPCallPack::compress(char*& data) {
 	return dataLen;
 }
 
-void PPCallPack::decompressInfo(char* data) {
+PPVarPack* decompress(char* data, int dataLen) {
+	// dataLen dummy!
+	int fnNameLen = strlen(data) + 1;
+	int dataSize;
+ 
+	PPVarPack* argsPack = mkVarPack(data + fnNameLen, dataSize);
+	return argsPack;
+}
+
+PPVarPack* PPCallPack::decompressInfo(char* data) {
 	int fnNameLen = strlen(data)+1;
 	int dataSize;		// return of mkVarPack
 
 	dbgPrint(0, "PPCallPack function: %s", data);
 	PPVarPack* argsPack = mkVarPackInfo(data + fnNameLen, dataSize);
+	return argsPack;
 }

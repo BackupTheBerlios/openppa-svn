@@ -14,16 +14,23 @@
 
 PPPtrPack::PPPtrPack()
  : PPVarPack()
-{
-	size = 0;
-}
+{ size = 1; }		// by default 1, when generating code (?)
+
+PPPtrPack::PPPtrPack(int iSize)
+ : PPVarPack(iSize)
+{}
 
 PPPtrPack::~PPPtrPack()
 {
 }
 
 int PPPtrPack::getCompressSize() {
-	return 3 + size * (*this)[0]->getCompressSize();	// all submembers same size
+	int ttl = 3;
+
+	for(int i=0; i < size; i++) {
+		ttl += (*this)[i]->getCompressSize();
+	}
+	return ttl;
 }
 
 
@@ -45,10 +52,19 @@ int PPPtrPack::compress(char* dataPtr) {
 }
 
 void PPPtrPack::addNode(PPVarPack* vPack) {
-	(*this)[size++] = vPack;
+	if(iCurrent >= size)
+		dbgPrint(2, "PPPtrPack::addNode size exceeded");
+
+	(*this)[iCurrent] = vPack;
+	iCurrent++;
 }
 
-PPVarPack*& PPPtrPack::operator[] (const int nIndex) {		// + decompression
+PPPtrPack& PPPtrPack::operator<< (const PPVarPack& rightArg) {
+	this->addNode(rightArg.clone());
+	return *this;
+}
+
+PPVarPack*& PPPtrPack::getItem (const int nIndex) {		// + decompression
 	return varPackArray[nIndex];
 }
 
@@ -92,4 +108,8 @@ int PPPtrPack::decompressInfo(int iSize, char* data) {
 }
 
 void PPPtrPack::getData(char*& data, int& dataLen) {
+}
+
+PPVarPack* PPPtrPack::clone() const{
+	return new PPPtrPack(*this);
 }

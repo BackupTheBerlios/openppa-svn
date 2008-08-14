@@ -23,12 +23,20 @@
 class PPVarPack{
 public:
 	PPVarPack();
+	PPVarPack(int iSize);
+
 	~PPVarPack();
 
 	virtual int getCompressSize() =0;
 	virtual int compress(char* dataPtr) =0;
-	virtual void addNode(PPVarPack* vPack) =0;
-	virtual PPVarPack*& operator[] (const int nIndex) =0;		// ++ decompression
+
+	virtual void addItem(PPVarPack* vPack, int nIndex = -1) =0;
+	//virtual PPVarPack& operator<<= (const PPVarPack& entry);	// 'deref' addItem(v alias (hardlink)
+
+	virtual PPVarPack*& getItem(const int nIndex) =0;
+	virtual PPVarPack*& operator[] (const int nIndex) =0;	// getItem alias, (softlink)
+	virtual PPVarPack& operator() (const int nIndex) =0;	// 'deref' getItem alias   (hardlink), convenience
+
 	virtual void setData(char* dataPtr, int dataLen) =0;
 
 	// -- decompression --
@@ -36,11 +44,14 @@ public:
 	virtual int decompressInfo(int iSize, char* data) =0;
 	virtual void getData(char*& data, int& dataLen) =0;
 
+	// convenience
+	virtual PPVarPack* clone() const =0;
+
 protected:
 	// variables
 	PPVarPack* varPackArray[20];// more VarPacks
 	char* data;    // or data. can use union
-	int size;
+	int size, iCurrent;
 };
 PPVarPack* mkVarPack(char* dataPtr, int& size);
 PPVarPack* mkVarPackInfo(char* dataPtr, int& size);

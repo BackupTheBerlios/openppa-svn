@@ -21,18 +21,24 @@ class PPFunPack : public PPVarPack
 {
 public:
     PPFunPack();
+	PPFunPack(int iSize);
+	PPFunPack(int iSize, char* dataPtr);
+
     ~PPFunPack();
 
 	int getCompressSize();
 	int compress(char* dataPtr);
 	void addNode(PPVarPack* vPack);
-	PPVarPack*& operator[] (const int nIndex);
+	PPVarPack*& getItem (const int nIndex);
 	void setData(char* dataPtr, int dataLen);
 
 	// -- decompression --
 	int decompress(int iSize, char* data);
 	int decompressInfo(int iSize, char* data);
 	void getData(char*& data, int& dataLen);
+
+	// convenience
+	PPVarPack* clone() const;
 };
 
 #endif

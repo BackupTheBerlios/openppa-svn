@@ -13,8 +13,12 @@
 
 PPClsPack::PPClsPack()
  : PPVarPack()
-{
-	size = 0;
+{ size = 0; }
+
+PPClsPack::PPClsPack(int iSize)
+ : PPVarPack(iSize) {
+	for(int i=0; i < iSize; i++)
+		varPackArray[i] = 0;
 }
 
 PPClsPack::~PPClsPack()
@@ -59,7 +63,7 @@ void PPClsPack::addNode(PPVarPack* vPack) {
 }
 
 
-PPVarPack*& PPClsPack::operator[] (const int nIndex) {		// ++ decompression
+PPVarPack*& PPClsPack::getItem (const int nIndex) {		// ++ decompression
 	return varPackArray[nIndex];
 }
 
@@ -69,6 +73,8 @@ void PPClsPack::setData(char* dataPtr, int dataLen) {
 
 void PPClsPack::setSize(int iSize) {
 	size = iSize;
+	for(int i=0; i < iSize; i++)
+		varPackArray[i] = 0;
 }
 
 // -- decompression --
@@ -111,4 +117,29 @@ int PPClsPack::decompressInfo(int iSize, char* data) {
 
 void PPClsPack::getData(char*& data, int& dataLen) {
 	dbgPrint(2, "PPClsPack::getData not implemented");
+}
+
+PPVarPack* PPClsPack::clone() const {
+	return new PPClsPack(*this);
+}
+
+PPClsPack& PPClsPack::operator() (int nIndex) {
+	if(nIndex >= size) 
+		dbgPrint(1, "PPClsPack::operator() index out of range");
+
+	iCurrent = nIndex;
+	return *this;
+}
+
+PPClsPack& PPClsPack::operator<<= (const PPVarPack& entry) {
+	if(iCurrent >= size) 
+		dbgPrint(1, "PPClsPack::operator<<= operating on out-of-range index");
+
+	if(varPackArray[iCurrent])
+		varPackArray[iCurrent]->addNode(entry.clone());
+
+	else
+		varPackArray[iCurrent] = entry.clone();
+
+	return *this;
 }

@@ -15,8 +15,14 @@
 
 PPFunPack::PPFunPack()
  : PPVarPack()
-{
-}
+{ size = sizeof(int); }
+
+PPFunPack::PPFunPack(int iSize)
+ : PPVarPack(iSize)
+{}
+
+PPFunPack::PPFunPack(int iSize, char* dataPtr)
+ : PPVarPack(iSize) { data = dataPtr; }
 
 PPFunPack::~PPFunPack()
 {
@@ -39,8 +45,8 @@ void PPFunPack::addNode(PPVarPack* vPack) {
 	dbgPrint(1, "PPFunPack::addNode not implemented");
 }
 
-PPVarPack*& PPFunPack::operator[] (const int nIndex) {
-	dbgPrint(1, "PPFunPack::operator[] not implemented");
+PPVarPack*& PPFunPack::getItem (const int nIndex) {
+	dbgPrint(1, "PPFunPack::getItem,[] not implemented");
 }
 
 void PPFunPack::setData(char* dataPtr, int dataLen) {
@@ -71,4 +77,8 @@ int PPFunPack::decompressInfo(int iSize, char* data) {
 void PPFunPack::getData(char*& data, int& dataLen) {
 	data = this->data;
 	dataLen = size;
+}
+
+PPVarPack* PPFunPack::clone() const {
+	return new PPFunPack(*this);
 }

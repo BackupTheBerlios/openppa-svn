@@ -18,31 +18,20 @@
 
 int PPAppSender::hello(int iData) {
 	dbgPrint(0, "calling hello function");
-
-	PPClsPack args;
-	args.setSize(2);
-	args[0] = new PPPtrPack;
-
-	PPFunPack *fnPak = new PPFunPack;
-	args[0]->addNode(fnPak);
-	(*args[0])[0]->setData((char*)&iData, 4);
-	args[1] = new PPFunPack;
 	int x = 112;
-	args[1]->setData((char*)&x, 4);
- 
-	PPCallPack callPack(&args, "hello");
 
-	char* dataSend;
-	int dataLen = callPack.compress(dataSend);
+	PPClsPack args(2);
+	args(0) <<= PPPtrPack(1) << PPFunPack(4, (char*)&iData);
+	args(1) <<= PPClsPack(1) <<= PPFunPack(4, (char*)&x);
 
-	int opId = coreEnt->send(dataSend, dataLen);
-	// MEMORY LEAK!
-	coreEnt->receive(opId, dataSend, dataLen);
-	// process return
+	// MEMORY LEAKS (deep)!
+	sendFn("hello", args);
+	//args = receiveFn();
 }
 
 PPAppSender::PPAppSender()
 {
+	
 }
 
 
@@ -50,7 +39,24 @@ PPAppSender::~PPAppSender()
 {
 }
 
+void PPAppSender::sendFn(char* fName, PPClsPack& args) {
+	PPCallPack callPack(&args, fName);
 
+	char* dataSend;
+	int dataLen = callPack.compress(dataSend);
+
+	opId = coreEnt->send(dataSend, dataLen);
+}
+
+PPClsPack& PPAppSender::receiveFn() {
+	char* data; int dataLen;
+	coreEnt->receive(opId, data, dataLen);
+
+	PPCallPack callPack;
+	retArgs = dynamic_cast<PPClsPack*>(callPack.decompressInfo(data));
+
+	return *retArgs;		// downcast
+}
 
 void PPAppSender::loadLibSymbols(char* coreLibPath) {
 	coreLibHandle = dlopen(coreLibPath, RTLD_NOW);

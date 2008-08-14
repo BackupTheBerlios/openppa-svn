@@ -17,37 +17,43 @@
 #include "proxy/varpack/ppfunpack.h"
 
 PPVarPack::PPVarPack()
-{
-}
+{ iCurrent = 0; }
 
+PPVarPack::PPVarPack(int iSize) 
+{ iCurrent = 0; size = iSize; }
+
+PPVarPack*& PPVarPack::operator[] (const int nIndex) {		// ++ decompression
+	return getItem(nIndex);
+}
 
 PPVarPack::~PPVarPack()
-{
-}
+{}
 
 // TODO: Memory Leaks
 PPVarPack* mkVarPack(char* dataPtr, int& size) {
-	int iType = (int)dataPtr[0];
+	int iType = 0;
+	iType = (int)dataPtr[0];
 	int iSize;
+	PPVarPack* pak;
 
 	cvtIntFrom2B(&iSize, dataPtr + 1);
 	
 	switch(iType) {
 	case PTR_ID: {
-		PPPtrPack* pak = new PPPtrPack;
-		size = pak->decompress(iSize, dataPtr+3);
+		pak = new PPPtrPack;
+		size = pak->decompress(iSize, dataPtr+3)	+3;
 		
 		return pak; }
 		
 	case CLS_ID: {
-		PPClsPack* pak = new PPClsPack;
-		size = pak->decompress(iSize, dataPtr+3);
+		pak = new PPClsPack;
+		size = pak->decompress(iSize, dataPtr+3)	+3;
 		
 		return pak; }
 		
 	case FUN_ID:{
-		PPFunPack* pak = new PPFunPack;
-		size = pak->decompress(iSize, dataPtr+3);
+		pak = new PPFunPack;
+		size = pak->decompress(iSize, dataPtr+3)	+3;
 		
 		return pak;}
 	}

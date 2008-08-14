@@ -26,7 +26,7 @@ public:
 	PPVarPack*& operator[] (const int nIndex);
 	int compress(char*& data);
 
-	void decompressInfo(char* data);
+	PPVarPack* decompressInfo(char* data);
 
 private:
 	char* funcName;

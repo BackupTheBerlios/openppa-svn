@@ -21,12 +21,14 @@ class PPPtrPack : public PPVarPack
 {
 public:
     PPPtrPack();
+	PPPtrPack(int iSize);
+
     ~PPPtrPack();
 
 	int getCompressSize();
 	int compress(char* dataPtr);
 	void addNode(PPVarPack* vPack);
-	PPVarPack*& operator[] (const int nIndex);		// + decompression
+	PPVarPack*& getItem (const int nIndex);		// + decompression
 	void setData(char* dataPtr, int dataLen);
 
 	// -- decompression --
@@ -34,6 +36,10 @@ public:
 	int decompressInfo(int iSize, char* data);
 
 	void getData(char*& data, int& dataLen);
+
+	// convenience
+	PPVarPack* clone() const;
+	PPPtrPack& operator<< (const PPVarPack& rightArg);
 
 private:
 	

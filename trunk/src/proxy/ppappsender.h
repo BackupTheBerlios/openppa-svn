@@ -12,6 +12,7 @@
 #ifndef PPAPPSENDER_H
 #define PPAPPSENDER_H
 #include "core/pcplugentity.h"
+#include "proxy/varpack/ppclspack.h"
 
 /**
 	@author pista <pista@pista-desktop>
@@ -25,6 +26,10 @@ public:
     PPAppSender();
     ~PPAppSender();
 
+	// convenient send/receive
+	void sendFn(char* fName, PPClsPack& args);
+	PPClsPack& receiveFn();
+
 	// proxy fn: int function
 	void loadLibSymbols(char* coreLibPath);
 	void loadPlugin(char* proxyPath, char* pluginPath);
@@ -32,12 +37,13 @@ public:
 
 	void sendSomeStuff();
 private:
+	// state information
+	int opId;
+	PPClsPack* retArgs;
+
 	// symbols
 	void* coreLibHandle;
 	PCPlugEntity* coreEnt;
-	//core ent
-	//int (PCPlugEntity::*sendPtr)(char* data, int dataLen);
-	//void (PCPlugEntity::*receivePtr)(int opId, char* data, int& dataLen);
 
 	typedef PCPlugEntity* (*CoreIfaceFnType) (char* proxyPath, char* plugPath);
 	CoreIfaceFnType coreIfaceFn;
