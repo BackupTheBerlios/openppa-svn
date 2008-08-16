@@ -36,22 +36,11 @@ int PPFunPack::getCompressSize() {
 int PPFunPack::compress(char* dataPtr) {
 	dataPtr[0] = FUN_ID;
 	cvtIntTo2B(&size, dataPtr + 1);
+	dbgPrint(0, "FUNPACK::MEMCPY:size %d", data, size);
+	dumpCharArray(data);
 	memcpy(dataPtr+3, data, size);
 
 	return 3 + size;
-}
-
-void PPFunPack::addNode(PPVarPack* vPack) {
-	dbgPrint(1, "PPFunPack::addNode not implemented");
-}
-
-PPVarPack*& PPFunPack::getItem (const int nIndex) {
-	dbgPrint(1, "PPFunPack::getItem,[] not implemented");
-}
-
-void PPFunPack::setData(char* dataPtr, int dataLen) {
-	data = dataPtr;
-	size = dataLen;
 }
 
 int PPFunPack::decompress(int iSize, char* data) {
@@ -79,6 +68,19 @@ void PPFunPack::getData(char*& data, int& dataLen) {
 	dataLen = size;
 }
 
+void PPFunPack::setData(char* dataPtr, int dataLen) {
+	data = dataPtr;
+	size = dataLen;
+}
+
 PPVarPack* PPFunPack::clone() const {
 	return new PPFunPack(*this);
 }
+
+// not imlemented / undefined
+PPVarPack*& PPFunPack::getItemRef(const int nIndex) { dbgPrint(2,"PPFunPack::getItemRef not implemented"); }
+PPVarPack*& PPFunPack::operator[] (const int nIndex) { dbgPrint(2,"PPFunPack::operator[] not implemented"); }
+
+PPVarPack& PPFunPack::operator<<  (const PPVarPack& entry) { dbgPrint(2,"PPFunPack::operator<< not implemented"); }
+PPVarPack& PPFunPack::operator<<= (const PPVarPack& entry) { dbgPrint(2,"PPFunPack::operator<<= not implemented"); }
+PPVarPack& PPFunPack::operator() (const int nIndex) { dbgPrint(2,"PPFunPack::operator() not implemented"); }

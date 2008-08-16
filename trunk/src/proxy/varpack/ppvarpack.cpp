@@ -22,12 +22,56 @@ PPVarPack::PPVarPack()
 PPVarPack::PPVarPack(int iSize) 
 { iCurrent = 0; size = iSize; }
 
-PPVarPack*& PPVarPack::operator[] (const int nIndex) {		// ++ decompression
-	return getItem(nIndex);
+PPVarPack::~PPVarPack() {}
+
+
+PPVarPack*& PPVarPack::getItemRef(const int nIndex) {
+	if(nIndex == -1) {
+		if(iCurrent >= size)
+			dbgPrint(2, "PPVarPack::getItemRef current index out of range");
+
+		return varPackArray[iCurrent++];
+
+	} else {
+		if(nIndex >= size)
+			dbgPrint(2, "PPVarPack::getItemRef index out of range");
+
+		return varPackArray[nIndex];
+	}
 }
 
-PPVarPack::~PPVarPack()
-{}
+PPVarPack*& PPVarPack::operator[] (const int nIndex) {
+	return getItemRef(nIndex);
+}
+
+PPVarPack& PPVarPack::operator<<  (const PPVarPack& entry) {
+	getItemRef() = entry.clone();
+}
+
+PPVarPack& PPVarPack::operator<<= (const PPVarPack& entry) {
+	*this << entry;
+}
+
+PPVarPack& PPVarPack::operator() (const int nIndex) {
+	iCurrent = nIndex;
+	if(getItemRef(nIndex))
+		return *getItemRef(nIndex);
+
+	else
+		return *this;
+}
+
+char* PPVarPack::getData() {
+	char* retData; int dataLen;
+	getData(retData, dataLen);
+	return retData;
+}
+
+char* PPVarPack::getData(int& dataLen) {
+	char* retData;
+	getData(retData, dataLen);
+	return retData;
+}
 
 // TODO: Memory Leaks
 PPVarPack* mkVarPack(char* dataPtr, int& size) {

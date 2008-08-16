@@ -30,19 +30,26 @@ public:
 	virtual int getCompressSize() =0;
 	virtual int compress(char* dataPtr) =0;
 
-	virtual void addItem(PPVarPack* vPack, int nIndex = -1) =0;
-	//virtual PPVarPack& operator<<= (const PPVarPack& entry);	// 'deref' addItem(v alias (hardlink)
+// <Functions common for PPVarPack and PPClsPack>
+	//get item operators
+	virtual PPVarPack*& getItemRef(const int nIndex = -1);		// get/set, because of reference
+	virtual PPVarPack*& operator[] (const int nIndex);			// getItemRef alias, (softlink)
 
-	virtual PPVarPack*& getItem(const int nIndex) =0;
-	virtual PPVarPack*& operator[] (const int nIndex) =0;	// getItem alias, (softlink)
-	virtual PPVarPack& operator() (const int nIndex) =0;	// 'deref' getItem alias   (hardlink), convenience
+	// add(set) item operators
+	virtual PPVarPack& operator<<  (const PPVarPack& entry);	// 'deref' getItem(x, -1) (hardlink)
+	virtual PPVarPack& operator<<= (const PPVarPack& entry);	// exactly the same as <<, but right-to-left evaluation
+	virtual PPVarPack& operator() (const int nIndex);			// if has node: return node; else setCurrentItem(nIndex), return this. Two purposes
+// </Functions...>
 
+	// only with FunPack
+	char* getData();
+	char* getData(int& dataLen);
+	virtual void getData(char*& data, int& dataLen) =0;
 	virtual void setData(char* dataPtr, int dataLen) =0;
 
 	// -- decompression --
 	virtual int decompress(int iSize, char* data) =0;
 	virtual int decompressInfo(int iSize, char* data) =0;
-	virtual void getData(char*& data, int& dataLen) =0;
 
 	// convenience
 	virtual PPVarPack* clone() const =0;

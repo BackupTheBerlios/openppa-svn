@@ -51,28 +51,7 @@ int PPPtrPack::compress(char* dataPtr) {
 	return ttl;
 }
 
-void PPPtrPack::addNode(PPVarPack* vPack) {
-	if(iCurrent >= size)
-		dbgPrint(2, "PPPtrPack::addNode size exceeded");
-
-	(*this)[iCurrent] = vPack;
-	iCurrent++;
-}
-
-PPPtrPack& PPPtrPack::operator<< (const PPVarPack& rightArg) {
-	this->addNode(rightArg.clone());
-	return *this;
-}
-
-PPVarPack*& PPPtrPack::getItem (const int nIndex) {		// + decompression
-	return varPackArray[nIndex];
-}
-
-void PPPtrPack::setData(char* dataPtr, int dataLen) {
-	dbgPrint(2,"PPPtrPack::setData not implemented");
-}
-
-	// -- decompression --
+// -- decompression --
 int PPPtrPack::decompress(int iSize, char* data) {
 	int ttl;
 
@@ -107,9 +86,15 @@ int PPPtrPack::decompressInfo(int iSize, char* data) {
 	return ttl;
 }
 
-void PPPtrPack::getData(char*& data, int& dataLen) {
-}
-
 PPVarPack* PPPtrPack::clone() const{
 	return new PPPtrPack(*this);
 }
+
+void PPPtrPack::setSize(int iSize) {
+	size = iSize;
+	for(int i=0; i < iSize; i++)
+		varPackArray[i] = 0;
+}
+
+void PPPtrPack::getData(char*& dataPtr, int& dataLen) { dbgPrint(2,"PPPtrPack::getData not implemented"); }
+void PPPtrPack::setData(char* dataPtr, int dataLen) { dbgPrint(2,"PPPtrPack::setData not implemented"); }

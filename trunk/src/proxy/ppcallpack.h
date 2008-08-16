@@ -26,7 +26,10 @@ public:
 	PPVarPack*& operator[] (const int nIndex);
 	int compress(char*& data);
 
+	PPVarPack* decompress(char* data, int dataLen);
 	PPVarPack* decompressInfo(char* data);
+	char* getFuncName();
+	PPClsPack* getArgs();
 
 private:
 	char* funcName;

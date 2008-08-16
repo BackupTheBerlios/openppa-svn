@@ -40,6 +40,10 @@ private:
 	int genOpId();
 	void delOpId(int opId);
 
+	// no copy, or assignment
+	PCPlugEntity& operator= (const PCPlugEntity& other);
+	PCPlugEntity(const PCPlugEntity& other);
+
 	int opIdArray[128];	
 	int opIdArrayLength;
 	

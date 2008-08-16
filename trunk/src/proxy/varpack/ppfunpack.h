@@ -28,14 +28,25 @@ public:
 
 	int getCompressSize();
 	int compress(char* dataPtr);
-	void addNode(PPVarPack* vPack);
-	PPVarPack*& getItem (const int nIndex);
+
+// <Functions common for PPVarPack and PPClsPack>, not-implemented errors
+	//get item operators
+	PPVarPack*& getItemRef(const int nIndex = -1);		// get/set, because of reference
+	PPVarPack*& operator[] (const int nIndex);			// getItemRef alias, (softlink)
+
+	// add(set) item operators
+	PPVarPack& operator<<  (const PPVarPack& entry);	// 'deref' getItem(x, -1) (hardlink)
+	PPVarPack& operator<<= (const PPVarPack& entry);	// exactly the same as <<, but right-to-left evaluation
+	PPVarPack& operator() (const int nIndex);			// if has node: return node; else setCurrentItem(nIndex), return this. Two purposes
+// </Functions...>
+
+	// only with FunPack
+	void getData(char*& data, int& dataLen);
 	void setData(char* dataPtr, int dataLen);
 
 	// -- decompression --
 	int decompress(int iSize, char* data);
 	int decompressInfo(int iSize, char* data);
-	void getData(char*& data, int& dataLen);
 
 	// convenience
 	PPVarPack* clone() const;

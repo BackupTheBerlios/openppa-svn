@@ -27,22 +27,19 @@ public:
 
 	int getCompressSize();
 	int compress(char* dataPtr);
-	void addNode(PPVarPack* vPack);
-	PPVarPack*& getItem (const int nIndex);		// + decompression
-	void setData(char* dataPtr, int dataLen);
+
+	void setSize(int iSize);
 
 	// -- decompression --
 	int decompress(int iSize, char* data);
 	int decompressInfo(int iSize, char* data);
 
+	// FunPack: not implemented
 	void getData(char*& data, int& dataLen);
+	void setData(char* dataPtr, int dataLen);
 
 	// convenience
 	PPVarPack* clone() const;
-	PPPtrPack& operator<< (const PPVarPack& rightArg);
-
-private:
-	
 };
 
 #endif

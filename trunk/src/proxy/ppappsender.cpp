@@ -18,15 +18,14 @@
 
 int PPAppSender::hello(int iData) {
 	dbgPrint(0, "calling hello function");
-	int x = 112;
 
-	PPClsPack args(2);
-	args(0) <<= PPPtrPack(1) << PPFunPack(4, (char*)&iData);
-	args(1) <<= PPClsPack(1) <<= PPFunPack(4, (char*)&x);
-
-	// MEMORY LEAKS (deep)!
+	PPClsPack args(1);
+	args(0) <<= PPFunPack(4, (char*)&iData);
 	sendFn("hello", args);
-	//args = receiveFn();
+
+	PPClsPack& retArgs = receiveFn();
+	int *iRet = (int*)retArgs(0).getData();
+	return *iRet;
 }
 
 PPAppSender::PPAppSender()
@@ -81,7 +80,7 @@ void PPAppSender::closeLib() {
 }
 
 void PPAppSender::sendSomeStuff() {
-	hello(4);
+	dbgPrint(0, "Hello call returned: %d", hello(123456789));
 
 	return;
 	dbgPrint(0, "Sending some stuff...");
