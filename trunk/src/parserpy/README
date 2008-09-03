@@ -1,0 +1,3 @@
+This package is not yet in usable state.
+
+It depends on pygccxml python package which depends on gccxml
