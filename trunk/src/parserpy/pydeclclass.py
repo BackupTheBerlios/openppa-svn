@@ -5,34 +5,47 @@ This class is a data container for functions, it's types, results of parsing ope
 import pygccxml.declarations as decls
 import pymisc
 import pyplugapi
+import pytypes
 
 class DeclCls:
-    _types = {}          # 'type name'              : 'obj_ref'
-    
-    # API functions, used to generate idl and PPA::Plug::*
-    _apiFuns = {}        # 'function name'          : 'obj_ref'  ; todo: namespaces / clashes
+    _types = None        # TypeTreeContainer
+    _funs = None         # FreeFnsContainer
+        
+    def __init__(self):
+        self._types = pytypes.TypeTreeContainer()
+        self._funs = pyplugapi.FreeFnsContainer()
     
     # functions
     # add* functions todo: type clashes
     def addType(self, type):
-        typeDec = decls.type_traits.decompose_type(type)
-        self._types[typeDec[-1].decl_string] = typeDec[-1]
+        return self._types.addType(type)
         
     # automatically add types
     def addAPIFn(self, func):
-        self.addType(func.return_type)
-        for arg in func.arguments:
-            self.addType(arg.type)
+        retFnIdl = self.addType(func.return_type)
+        argsIdl = [self.addType(arg.type) for arg in func.arguments]        
+        self._funs.addFunc(func,retFnIdl,argsIdl)
         
-        self._apiFuns[func.name] = func
+    # RETURN IDL GENERATED STUFF
+    #def genIdl(self):
+        
         
     def genAPIFnIdl(self):
         for fn in self._apiFuns.values():
-                print pyplugapi.genIdlFn(fn)
+            print pyplugapi.genIdlFn(fn)
         
     # debugging
     def printAPIFns(self):
-        pymisc.printFns(self._apiFuns.values())
+        #pymisc.printFns(self._apiFuns.values())
+        print '--as parsed--'
+        self._funs.printFnsNat()
+        print '--idl transform--'
+        self._funs.printFnsIdl()
     
+    # little debug
     def printTypes(self):
-        print self._types.keys()
+        self._types.printTypes()
+
+    # total debug
+    def printTypesAll(self):
+        self._types.printTypesAll()

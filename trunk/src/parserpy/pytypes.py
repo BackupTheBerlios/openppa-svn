@@ -12,45 +12,137 @@
 # TODO: shortcut 4string
 
 import pygccxml.declarations as decls
+import pyscopedef
+import pytyperes
 
-class TypeIdlGen():
-    type = None
-    def __init__(self, type):
-        self.type = type
+def getTypePPA(type):
+    """Determines arg type"""
+    # not sure if these two cases can ever happen------------
+    if  declarations.is_pointer(type):
+        return TypedefSeq(type)
         
-    def genDeclList(self):
-        if decls.type_traits.is_pointer(type):
-            return '_PPA_' + genTypeName(type.base, False) + 'Seq'
-            
-        elif decls.type_traits.is_void(type):
-            return 'void'
+    elif declarations.is_fundamental(type):
+        return []
+    # -------------------------------------------------------
     
-        elif decls.type_traits.is_fundamental(type):
-            if firstCall:
-                return funCppMapping(type)
-            
-            else:
-                return funIdlMappingShort(type)
-            
-        elif decls.type_traits.is_enum(type):
-            return '_PPA_' + type.declaration.name + 'Enum'
-        
-        elif decls.type_traits.is_class(type):
-            return '_PPA_' + type.declaration.name + 'Cls'
-                    
-        #elif decls.type_traits.is_pointer(type):
-        #elif decls.type_traits.is_pointer(type):
-        #elif decls.type_traits.is_pointer(type):
-        #elif decls.type_traits.is_pointer(type):
-        #elif decls.type_traits.is_pointer(type):
-        #elif decls.type_traits.is_pointer(type):
-        #elif decls.type_traits.is_pointer(type):
-        #elif decls.type_traits.is_pointer(type):
-        #elif decls.type_traits.is_pointer(type):
-        #elif decls.type_traits.is_pointer(type):
-        else:
-            return 'UNKNOWN_PPA_' + type.decl_string
+    elif  declarations.is_class(type):
+        return pyscopedef.CClass(type, pytyperes.resolveNS(type))
+    
+    else:
+        raise Exception('getTypePPA::unknown type (maybe enum or something)')
+    #for argDec in argDecom
+    
+# Fundamental type, SequenceOf Types
+class TypedefSeq():
+    _pgxDecl = None      # base declaration
+    
+    _level = 0           # 0 = Base Type, pointlesss
+    _levelOfVar = 0      # further explanation!
+    #levelOfVar >= level
+    
+    
+    _baseName = ''       # aaah!!!
+    _baseTypeName = ''   # corba type
+    
+    # sequence extension
+    _deriveTypeName = '' # name to derive sequences from. (typically similar to _baseTypeName)
+    # is that below necssary?
+    #_typeArrList = None  # [(typeName, typeDef decl.),...] -> primary index is level
 
+    
+    def __init__(self, decl):
+        decom = decls.decompose_type(decl)
+        decom.reverse()
+        self._pgxDecl = base = decom[0]
+        
+        # type base is either fundamental type or class/enum/else
+        if decls.type_traits.is_fundamental(base):
+            self._baseName = base.decl_string
+            self._baseTypeName = funIdlMapping(base)
+            self._deriveTypeName = funIdlMappingShort(base)
+            
+        else:
+            self._baseName = base.decl_string
+            self._baseTypeName = self._deriveTypeName = base.decl_string.lstrip('::') ## TODO: maybe need to stripall a::b::[actual name]
+        
+        # array / ptr -> corba sequence
+        for type in decom[1:]:
+            if decls.type_traits.is_pointer(type) or decls.type_traits.is_array(type):
+                self._incDimension()
+                
+        self._levelOfVar = self._level
+                
+    def isEqualToType(self, type):
+        # access private member TODO eliminate (or not)
+        if hasattr(type,'_levelOfVar'): # it is TypedefSeq
+            if(self._baseName == type._baseName): # it's the same
+                if self._level < type._level: #level correction
+                    self._level = type._level
+                    
+                return True
+        
+        return False
+        
+    # depencies are if only base is not fundamental (class or else)
+    # TODO: FOR EACH!!!!11
+    def getDeps(self):
+        if decls.type_traits.is_fundamental(self._pgxDecl):
+            return pytyperes.TypeDeps()
+        
+        elif decls.type_traits.is_pointer(self._pgxDecl):
+            raise Exception('TypedefSeq base can not be pointer!')
+        
+        else:
+            depType =  getTypePPA(self._pgxDecl)
+            return depType.getDeps()
+                
+    def isCompat(self, decl):
+        decom = pygccxml.declarations.decompose_type(decl)
+        decom.reverse()
+        return decom[0].decl_string == self._baseName
+    
+    def genDecl(self):
+        decls = []
+        
+        i=0
+        while i < self._level:
+            i += 1
+            typeName = '_PPAt' + self._deriveTypeName + 'Seq'*i
+            decls.append('typedef sequence<' + self._baseTypeName + '> ' + typeName)
+        
+        return decls
+
+    def getTypeName(self):
+        if self._levelOfVar == 0:
+            return self._baseTypeName
+        else:
+            return '_PPAt' + self._deriveTypeName + 'Seq'*self._levelOfVar
+    
+    def _isCompatBaseDirect(self, base):
+        return base.decl_string == self._isCompatBaseDirect
+                
+    # increase dimension if necessary
+    def merge(self, decl):
+        currLvl = 0
+        decom = pygccxml.declarations.decompose_type(decl)
+        decom.reverse()
+        if not self._isCompatBaseDirect(decom[0]):
+            raise Exception('TypedefSeq::merge types not compatible')
+        
+        for type in typeDecom[1:]:
+            if decls.type_traits.is_pointer(type) or decls.type_traits.is_array(type):
+                currLvl += 1
+                if currLvl > self._level:
+                    self._incDimension()
+                    
+        if currLvl == 0:
+            return self._baseTypeName
+        else:
+            return self._typeArrList[currLvl-1][0]    # return type name
+    
+    # increase dimensionh
+    def _incDimension(self):
+        self._level += 1    
 
 # FUNDAMENTAL TYPE MAPPING
 # todo: check 32/64
@@ -97,7 +189,7 @@ def funCppMapping(funType):
     #               'jbyte'                     : 'a',
     #               'jboolean'                  : 'a',
                     }
-    return funMapTable.get(funType.decl_string, 'undefined')
+    return funMapTable.get(funType.decl_string, 'UNDEFINED')
     
 # keep in sync with funCppMapping
 # todo: check 32/64
@@ -126,7 +218,7 @@ def funIdlMapping(funType):
     #               'complex float'             : 'a',
     #               'jdouble'                   : 'a',
     #               '__java_float'              : 'a',
-    #--             'void'                      : 'undefined',
+                    'void'                      : 'void',                   # we can map void->void
     #               '__java_double'             : 'a',
     #               'complex double'            : 'a',
     #               'jlong'                     : 'a',
@@ -143,7 +235,7 @@ def funIdlMapping(funType):
     #               'jbyte'                     : 'a',
     #               'jboolean'                  : 'a',
                     }
-    return funMapTable.get(funType.decl_string, 'undefined')
+    return funMapTable.get(funType.decl_string, 'UNDEFINED')
 
 # in sync with funIdlMapping
 # todo: check 32/64
@@ -173,7 +265,7 @@ def funIdlMappingShort(funType):
     #               'complex float'             : 'a',
     #               'jdouble'                   : 'a',
     #               '__java_float'              : 'a',
-    #--             'void'                      : 'undefined',
+    #--             'void'                      : 'undefined',      #no short void mapping
     #               '__java_double'             : 'a',
     #               'complex double'            : 'a',
     #               'jlong'                     : 'a',
@@ -190,4 +282,109 @@ def funIdlMappingShort(funType):
     #               'jbyte'                     : 'a',
     #               'jboolean'                  : 'a',
                     }
-    return funMapTable.get(funType.decl_string, 'undefined')
+    return funMapTable.get(funType.decl_string, 'UNDEFINED')
+
+
+# We've got a function, it has some types.
+# We need to tell the parser about the type, but also query type name
+# DEPRECAATED DEPRECATED!!! really retarded class
+class TypeTreeContainer():
+    _types = None   # list of all types
+    _baseDict = {}  # dict of {baseName :: <BaseType class>}
+    
+    # return typeName
+    def addType(self, type):
+        # make REVERSED decl string -> standard procedure
+        typeDecom = decls.type_traits.decompose_type(type)
+        typeDecom.reverse()
+        baseName = typeDecom[0].decl_string
+        
+        # We have already a type registered
+        if self._baseDict.has_key(baseName):
+            return self._baseDict[baseName].merge(typeDecom)     # merge this type into BaseType
+        
+        else:
+            self._baseDict[baseName] = BaseType(typeDecom)
+            return self._baseDict[baseName].getDimmestType()
+            
+    def printTypes(self):
+        for baseName, baseCls in self._baseDict.items():
+            print "Base: " + baseName
+            
+    def printTypesAll(self):
+        for baseName, baseCls in self._baseDict.items():
+            print "Base: " + baseName
+            baseCls.printDebug(1)
+            
+    def getTypedefs(self):
+        allTypeDefs = []
+        for baseType in self._baseDict.values():
+            allTypeDefs.extend(baseType.getTypedefs())
+            
+        return allTypeDefs
+
+
+
+# DEPRECATED SHITS
+
+
+# hmm something
+# Base for all types? class - yes, namespace - no
+# typedefs
+class BaseType():
+
+    # initialize: give me a decomttposed type list
+    def __init__(self, typeDecom):
+        self._typeArrList = []
+        base = typeDecom[0]
+        
+        # type base is either fundamental type or class/enum/else
+        if decls.type_traits.is_fundamental(base):
+            self._baseName = base.decl_string
+            self._baseTypeName = funIdlMapping(base)
+            self._deriveTypeName = funIdlMappingShort(base)
+            
+        else:
+            self._baseName = base.decl_string
+            self._baseTypeName = self._deriveTypeName = base.decl_string.lstrip('::')
+        
+        # array / ptr -> corba sequence
+        for type in typeDecom[1:]:
+            if decls.type_traits.is_pointer(type) or decls.type_traits.is_array(type):
+                self._incDimension()
+                
+                    
+    def getBaseName(self):
+        return self._baseName
+    
+    def getTypeName(self, level = 0):
+        assert level <= self._level
+        if level == 0:
+            return self._baseTypeName
+        
+        else:
+            return self._typeArrList[level-1][0]
+        
+    def getDimmestType(self):
+        if self._level == 0:
+            return self._baseTypeName
+        else:
+            return self.getTypeIdlDef(self._level-1)
+        
+    def getTypeIdlDef(self, level = 0):
+        assert level <= self._level
+        if level == 0:
+# TODO!!: this shit
+            return self._baseTypeName
+        
+        else:
+            return self._typeArrList[level-1][1]
+                        
+    def printDebug(self, indent=0):
+        print " "*4*indent + ('level=%d, base=%s(%s), baseDerive=%s' % (self._level, self._baseName, self._baseTypeName, self._deriveTypeName))
+        for typeName, typeDef in self._typeArrList:
+            print ' '*4*indent + ('TypeName=%s, Typedef=%s' % (typeName, typeDef))
+
+    def getTypedefs(self):
+        return [typeTuple[1] for typeTuple in self._typeArrList]
+

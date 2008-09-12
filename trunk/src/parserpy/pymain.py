@@ -1,15 +1,3 @@
-import os
-from pygccxml import parser,declarations
-import pyheader
-import pyargs
-import pyclass
-import pymisc  # debugging + designing
-
-import pydeclclass
-
-altHead1 = '/home/pista/usr/projects/3proxy-0.6-devel/src/proxy.h'
-altConf1 = parser.config_t(define_symbols = ['NOODBC'])
-
 """ Generate idls and PPA wrapper files.
 Input: {PrjDir}
        List of definitions(headers) in {PrjDir}, called prjDefs
@@ -39,6 +27,22 @@ pyheader.parseheader: get classes & free functions
 ** All PPA stuff is in PPA namespace and {$PrjDir}/PPA directory
 """
 
+import os
+from pygccxml import parser,declarations
+import pyheader
+import pyargs
+import pyclass
+import pymisc  # debugging + designing
+
+import pydeclclass
+import pyscopedef
+
+import pytyperes
+
+altHead1 = '/home/pista/usr/projects/3proxy-0.6-devel/src/proxy.h'
+altConf1 = parser.config_t(define_symbols = ['NOODBC'])
+
+
 global prjDir
 prjDir = os.getcwd().rsplit('/',1)[0]
             
@@ -52,9 +56,14 @@ def runParser():
     pyheader.writeLDebugFile(fnProc)
 
 
+def dbgRun3(hFiles, config = None):
+    global decls
+    decls = parser.parse(hFiles, config)
+
 # same as dbgRun, but uses the new infrastructure
 def dbgRun2(hFile, config = None):
     global declCls
+    global decls
     global dbgx
     
     declCls = pydeclclass.DeclCls()
@@ -65,31 +74,53 @@ def dbgRun2(hFile, config = None):
        declCls.addAPIFn(func)
        
        
-       
+""" HERE IT IS FRESH """
 
-def dbgRun(hFile, config = None):
-    global decls
-    global dbgx
+def dbgRun(hFiles, config = None):
+    global decls        # as parsed
+    global dbgx         # global ns
+    global globScope    # 'my' global ns
     
-    global dbgArg
-    global dbgArgStr
-        
-    decls = pyheader.parseHeaders([hFile], config)
-    dbgx = pyheader.parseHeader(decls, hFile)
+    decls = parser.parse(hFiles, config)
+    dbgx = declarations.get_global_namespace(decls)             # loss of information decls ?-> dbgx
     
-    dbgArg = declarations.type_traits.decompose_type(dbgx[0].arguments[0].type)
-    dbgArgStr = [x.decl_string for x in dbgArg]
+    # we've got our namespace
+    globScope = pyscopedef.Namespace(dbgx)
+    globScope.findFreeFns()             # find free functions
+    globScope.printFreeFns()
+    
+    global dbgFn
+    dbgFn = globScope._freeFnsContainer._freeFuns[0]
+    
+    global deps
+    deps = dbgFn.getDeps()
+    deps.resolveDeps()
+    
+    global dbgFnLst
+    dbgFnLst = globScope._freeFnsContainer
+    
+    
+    decls = deps.genDecls()
+    pytyperes.printDecls(decls)
     
 if __name__ == '__main__':
-    dbgRun2('/home/pista/usr/projects/openppaln/misc/dbgprint.h')
-    pass
+    dbgRun(['/home/pista/usr/projects/openppaln/misc/dbgprint.h'])
+    #declCls.printAPIFns()
     #cfg = parser.config_t(working_directory = prjDir, include_paths = [prjDir])
     #getDefsFromHeader(prjDir + '/parser/parsemain.h', cfg)
     #getDefsFromHeader('/home/pista/usr/projects/3proxy-0.6-devel/src/proxy.h', None)
     #runParser()
+
 
 def dbgRunAlt1():
     dbgRun(altHead1, altConf1)
     
 def dbgRun2Alt1():
     dbgRun2(altHead1, altConf1)
+
+def dbgalt3():
+    dbgRun3(['/home/pista/usr/tmp/pygccxml/someHeader.h'], None)
+    
+    
+""" Locate and categorize definitions
+"""
