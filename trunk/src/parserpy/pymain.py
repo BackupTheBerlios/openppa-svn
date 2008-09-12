@@ -28,7 +28,7 @@ pyheader.parseheader: get classes & free functions
 """
 
 import os
-from pygccxml import parser,declarations
+from pygccxml import parser
 import pyheader
 import pyargs
 import pyclass
@@ -41,7 +41,6 @@ import pytyperes
 
 altHead1 = '/home/pista/usr/projects/3proxy-0.6-devel/src/proxy.h'
 altConf1 = parser.config_t(define_symbols = ['NOODBC'])
-
 
 global prjDir
 prjDir = os.getcwd().rsplit('/',1)[0]
@@ -77,7 +76,7 @@ def dbgRun2(hFile, config = None):
 """ HERE IT IS FRESH """
 
 def dbgRun(hFiles, config = None):
-    global decls        # as parsed
+    global decls        # directly from parser
     global dbgx         # global ns
     global globScope    # 'my' global ns
     
@@ -92,16 +91,26 @@ def dbgRun(hFiles, config = None):
     global dbgFn
     dbgFn = globScope._freeFnsContainer._freeFuns[0]
     
-    global deps
-    deps = dbgFn.getDeps()
-    deps.resolveDeps()
-    
     global dbgFnLst
     dbgFnLst = globScope._freeFnsContainer
     
+    global deps2
+    deps2 = dbgFnLst.getDeps()
+    deps2.resolveDeps()
     
-    decls = deps.genDecls()
-    pytyperes.printDecls(decls)
+    print 'now printing fnls stuff'
+    decls2 = deps2.genDecls()
+    pytyperes.printDecls(decls2)
+    
+    print 'now declaring all functions'
+    global fnl
+    fnl = pytyperes.TypeDeps(dbgFnLst)
+    fnl.resolveDeps()
+    
+    global dc2
+    dc2 = fnl.genDecls()
+    pytyperes.printDecls(dc2)
+    
     
 if __name__ == '__main__':
     dbgRun(['/home/pista/usr/projects/openppaln/misc/dbgprint.h'])

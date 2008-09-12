@@ -35,7 +35,10 @@ class FreeFnsContainer:
         for freeFunc in self._freeFuns:
             deps.mergeWith(freeFunc.getDeps())
             
-        return deps 
+        return deps
+    
+    def genDecls(self):
+        return ["interface _PPAFreeFuns"] + [[f.genDecls() for f in self._freeFuns]]
         
     # print functions with types in natural form, as parsed    
     def printFnsNat(self):
@@ -65,7 +68,7 @@ class FreeFunc:
         self._argTypes = argTypes
         
     # TypeDeps interface(1/2)
-    def isEqalToType(self, type):
+    def isEqualToType(self, type):
         # access private member TODO eliminate
         return type._pgxDecl.decl_string == self._pgxDecl.decl_string
         
@@ -76,7 +79,7 @@ class FreeFunc:
     def getDeps(self):
         return pytyperes.TypeDeps([self._retType] + self._argTypes)
         
-    def genDecl(self):
+    def genDecls(self):
         return self.getFnIdlStringDef()
         
     # GENERATOR FUNCTIONS. Prior problem is categorization

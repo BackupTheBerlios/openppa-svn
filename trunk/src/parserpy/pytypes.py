@@ -101,7 +101,7 @@ class TypedefSeq():
         decom.reverse()
         return decom[0].decl_string == self._baseName
     
-    def genDecl(self):
+    def genDecls(self):
         decls = []
         
         i=0

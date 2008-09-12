@@ -31,10 +31,18 @@
 import pyscopedef
 
 """ Depency resolution, generation of declarations
-    Lifecycle: I have type t, I want to get all depencies
+    Lifecycle: I have type (TypeRes) t, I want to get all depencies
     x = TypeDeps()
     x->addType(t)
+    # alternatively x = TypeDeps(t)
+    
     x->resolveDeps()
+    
+    and finally get declarations
+    declLst = x->genDecls()
+    
+    TypeDeps can be viewed as reversed array. indexing is from bottom to top,
+    so the last element is the one that should be declared first in idl.
 """
 class TypeDeps():
     # most important variable
@@ -51,21 +59,24 @@ class TypeDeps():
         if typeInit == None:
             pass    # default
         
-        if type(typeInit) == list:
+        elif type(typeInit) == list:
             for typ in typeInit:
                 self.addType(typ)
                 
         else:   # we assume type == TypeRes
             self.addType(typeInit)
         
-    """ TypeDeps can be viewed as list of typeRes-s
+    """ TypeDeps can be viewed as list of TypeRes-s
     
         --- internal ---
-        There is no need for end-user to be concerned with Status of type.
+        There is no need for end-user to be concerned with Status of particular TypeRes.
         Either all are ToProcess or all are Processed.
     """
     def __getitem__(self, key):
         return self._typeArray[key][0]
+    
+    def __len__(self):
+        return len(self._typeArray)
         
 
     """ Add new TypeRes to resolution (for TypeDeps use mergeWith)
@@ -77,7 +88,6 @@ class TypeDeps():
         assumes there is no 'processing' element at all.
     """
     def addType(self, typeRes, startIdx = 0):
-        #typeArray.append([type, 0])
         idx = startIdx
         while idx < len(self._typeArray):
             if self[idx].isEqualToType(typeRes):
@@ -86,7 +96,7 @@ class TypeDeps():
             
         # if we're here, it means we should add dependency
         if idx >= len(self._typeArray):     # if the type is not in deparray
-            self._typeArray.append([type,0])
+            self._typeArray.append([typeRes,0])
             
             
     """ Resolve dependencies of everything in typeList.
@@ -101,53 +111,74 @@ class TypeDeps():
         We assume there are no duplicate (equalTo) elements. see addType function.
         Take first element, flag it as processing, get all it's depencies, merge.
         Flag it as processed. Do this for each element in the array.
+        
+        Example: typeDeps = [x,x,x,x,x].
+        Flag first as 'processing': [*,x,x,x,x]
+        Get first item dependencies: [*,x,x,x,x]; * = [y,y]
+        Then we merge it: [*,x,x,x,x].mergeWith([y,y])
+        And we get result: [+,x,x,x,x,y]. One y is gone because it was same as one x.
+        The other Y. Then proceed to the next x; then y, etc...
+        
+        In this case: [+, + = y, *, x, ...] -> where depency is already placed
+        before 'resolving' element there is a problem; there may be cycle, or not.
+        We must try to reloate that element (+=y) after *.
+        hmm, todo or something?. Right now it displays warning message
+        
+        
+        ***ALWAYS*** go this way. The resolution goes from bottom to top; the array
+        can only look like this [+,+,*,x,x,x], NO [+,x,+,...]. So [resolved] + resolving + [to resolve]
+        
     """
     def resolveDeps(self):
         idx = 0
         
-        while idx < len(self._typeArray):
+        while idx < len(self):
             if self._typeArray[idx][1] == 0:      # if is undefined
                 resType = self._typeArray[idx]
                 resType[1] = 1                     # we've got unresolved at currIdx, processing
                 resDeps = resType[0].getDeps() # we've got type depencies now
+                
                 self.mergeWith(resDeps, True)
                 resType[1] = 2  #processed
                 
-                brk = True
-            
             idx += 1
             
-    """ Merge self(TypeDep) with another TypeDep. No type in depList is in 'processing' state!
+    """ Merge self(TypeDep) with another TypeDep.
+        Dont use processing argument!
+        x->mergeWith(y) merges y into x. y can (don't have to) be deleted.
         
+        --- internal ---
+        case: x->mergeWith(y)
+        y must not have 'processing' element. Handles Processed and ToProcess element
+        the same way (TODO: specify for user).
+        
+        if processing == False:
+            it's like calling addType for each element in the array
+            
+        elif processing == True (by example):
+            list == [resolved] + resolving + [to resolve] <= invariantc
+            [x,x,x,x,x,x] -> this is a list of depencies
     """
-    def mergeWith(self, depList, processing = False):
-        for depen in depList._typeArray:
-            dep = depen[0]  # the actual type
+    def mergeWith(self, typeDeps, processing = False):
+        for dep in typeDeps:
             # todo: PROCESSED NON-PROCESS ?? merge what lists
             idx = 0
             
             if processing:       # definition can't be BEFORE depcy
-                while self._typeArray[idx] != 1:
-                    if self._typeArray[idx].isEqualToType(dep):
+                while self._typeArray[idx][1] != 1:
+                    if self[idx].isEqualToType(dep):
                         raise NotImplementedException('mergeWith. something is before dependable')
                     idx += 1
                 
-            # idx is at processing typeArray
-            while idx < len(self._typeArray):
-                if self._typeArray[idx][0].isEqualToType(dep):
-                    break
-                idx += 1
-                
-            # if we're here, it means we should add dependency
-            if idx >= len(self._typeArray):     # if the type is not in deparray
-                self._typeArray.append([dep,0])
-            
+            # so add the dependency
+            self.addType(dep, idx)
+
     # -----------------------------------------------
         
     # genDeclStr for each type
     # 
     def genDecls(self):
-        retArray = [typ[0].genDecl() for typ in self._typeArray]
+        retArray = [x.genDecls() for x in self]
         retArray.reverse()
         return retArray
     
@@ -176,17 +207,61 @@ def resolveNS(type):
         
     return currScope
 
-""" Generate idl declarations
+""" Print declarations from list declList
+    indent = indentation level (tab = 4 spaces)
+
+    declList :: [str | declList]
+    if declList in list is preceded by str, put that list in str-named scope,
+    otherwise put it in unnamed scope
+    
+    example: ['x', ['y', 'z']] ->
+    x {
+        y;
+        z;
+    };
+    
+    example2: [['x','y']] ->
+    x;
+    y;
 """
 def printDecls(declList, indent = 0):
-    for decl in declList:
-        if type(decl) == str:
-            print '{'
-            print '    '*indent + decl
-            print '};'
+    idx = 0
+    while idx < len(declList) - 1: # we use idx + 1 here
+        
+        # [..., 'string', ...]
+        if type(declList[idx]) == str:
             
-        elif type(decl ) == list:
-            printDecls(decl, indent + 1)
+            # [..., 'string', 'string', ] -> sequence
+            if type(declList[idx+1]) == str:
+                print '    '*indent + declList[idx] + ';'
+                
+            # [..., 'string', [decls], ] -> sequence    
+            elif type(declList[idx+1]) == list:
+                print '    '*indent + declList[idx] + ' {'
+                printDecls(declList[idx+1], indent+1)
+                print '    '*indent + '};'
+                idx += 1        # += 2 ttl
+                
+            else:
+                raise Exception('pytyperes::printDecls unrecognized type')
+                
+        elif type(declList[idx]) == list:
+            printDecls(declList[idx], indent)
             
         else:
-            print '!!!error!!!'
+            raise Exception('pytyperes::printDecls unrecognized type')
+        
+        idx += 1
+            
+    # last item
+    if idx == len(declList) - 1:
+        if type(declList[idx]) == str:
+            print '    '*indent + declList[idx] + ';'
+            
+        elif type(declList[idx]) == list:
+            printDecls(declList[idx], indent)
+            
+        idx += 1
+        
+    # at the end idx == len(declList)
+    assert(idx == len(declList))
