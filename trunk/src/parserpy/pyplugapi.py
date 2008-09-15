@@ -9,10 +9,13 @@ import pymisc
 import pytypes
 import pytyperes
 
-class FreeFnsContainer:
+# FreeFnContainer is leaf (with is FreeFns), so it doesn't have internal dependencies
+# Nothing can depend on it (and FreeFns)
+class FreeFnsContainer(pytyperes.TypeRes):
     _freeFuns = None        # FreeFunctions
     
     def __init__(self):
+        self.initTypeResToNull() # has no dependencies, may depend on something **relevance
         self._freeFuns = []
     
     def isEqualToType(self, type):
@@ -30,6 +33,8 @@ class FreeFnsContainer:
         self._freeFuns.extend(freeFuns)
         
     # Dependency list. Exclude itself
+    # is not class/namespace (even if it's mapped to idl interface)
+    # pass dependencies of it's fns to upper level
     def getDeps(self):
         deps = pytyperes.TypeDeps()
         for freeFunc in self._freeFuns:
@@ -50,7 +55,7 @@ class FreeFnsContainer:
         
     
 # Implements isEqualToType
-# TYPE
+# TODO: is this typeres?
 class FreeFunc:
     _pgxDecl = None
     _retType = None
@@ -75,10 +80,12 @@ class FreeFunc:
     def getFuncDecl(self):
         return self._pgxDecl
     
-    # TypeDeps interface(2/2)    
+    # TypeDeps interface(2/2)
+    # this is always leaf (in ns/class tree). It's dependencies are all composite types, or typedef
     def getDeps(self):
         return pytyperes.TypeDeps([self._retType] + self._argTypes)
         
+    # declaration is always absolute for it's argumentes (todo: future)
     def genDecls(self):
         return self.getFnIdlStringDef()
         

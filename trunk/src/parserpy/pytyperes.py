@@ -1,4 +1,4 @@
-""" Type resolution, dependencies
+""" Type resolution, dependenciesc ua  
     TypeDeps is only concerned with TypeRes(olvable)s 
     TypeRes must implement these (interface definition):
         
@@ -26,9 +26,115 @@
             These extra levels in tree are used to indent in declarations generation functions
             Generate decls only for itself and it's children.
 
+        *new
+        // request-swap system
+        // if X depends on Y, Y must be declared before first (move towards the end of the list)
+        // each TypeRes implementer implements sequence of depencies + seq of elements that depend on this TypeRes implementer
+        types: [Dependencies], [Dependenter]
+        ex. [x,x,self,y ,x,x]
+        self.dependsOn(y) : if self depends on y return True        # usually raises exception
+        
+        
+        
+
+Testing example:
+		namespace x {
+			typedef tDef int;
+			namespace y {
+				void k (tDef param);
+				void z1 (t1 p1, t2 p2, ...);
+				void z2...
+			};
+		};
+
+~> res to: ['x', ['y', ['z1', 'z2']]]
+resolveDeps context: In it's context resolve EXTERNAL dependencies, for example
+	x.resolveDeps() -> [tDef]
+
+	depency tree travel ->
+	x.resolveDeps {
+		seq1 = y.resolveDeps()
+			...
+		depSeq = depencies of all children
+		***for dep in depSeq: filter dep if is in self
+
+	return (filtered)
+***multiple inheritance:
+    namespace x {
+        namespace y {
+            typedef tDef int
+        };
+        
+        namespace z {
+            void k (tDef param);
+        };
+    }
+    
+    *** because of multiple inheritance we must modify first approach
+    look for depencies in children too:
+    if depency is in self -> request depency:
+        *<connect> depency with requester*w
+        if depency is not there, place it before requester
+        if depency is there: check if it's before requester
+            (if it's before, all's ok)
+        DepSwp: <if depency is AFTER requester> cycle resol.
+        [x,x,REQ,x0,x1,DEP,x,x,x]
+        swp (x1) w. (DEP) -> if DEP depends on x1 -> raise Exception(Clash)
+            # cycle detected -> todo allow cycles for interfaces
+            
+        swp (x0) w. (DEP)
+            ...
+        swp (REQ,DEP) -> 
+=> internal/external dependency resolution
 """
 
 import pyscopedef
+
+# interface TypeRes
+""" stub interface methods (that must be overloaded
+    implements internal dependency resolution
+"""
+class TypeRes():
+    _dependencyList = None     # TypeDeps // TypeRes's I depend on
+    _dependerList = None    # TypeDeps // TypeRes's that depend on me
+    
+    # this is abstract interface, do not allow instantiation
+    def __init__(self):
+        raise Exception('can not instantate abstract interface class')
+
+    def isEqualToType(self):
+        raise Exception('can not call abstract interface methods')
+
+    def getDeps(self):
+        raise Exception('can not call abstract interface methods')
+
+    def genDecls(self):
+        raise Exception('can not call abstract interface methods')
+
+    def initTypeResToNull(self):
+        # nul
+        self._dependencyList = TypeDeps()
+        self._dependerList = TypeDeps()
+
+    def addDependency(self, typeRes):
+        self._dependencyList.addType(typeRes)
+        
+    def addDepender(self, typeRes):
+        self._dependerList.addType(typeRes)
+        
+    # search for typeRes in depencyList
+    # todo: don't access private var's of TypeDep
+    def dependsOn(self, typeRes):
+        for dep in self._dependencyList._typeArray:
+            if dep.isEqualToType(typeRes):
+                return True
+            
+        return False    # we expect this
+        
+    """ Move down in idl declaration; move towards beginning of _
+    """
+    def moveDown(self):
+        pass
 
 """ Depency resolution, generation of declarations
     Lifecycle: I have type (TypeRes) t, I want to get all depencies
@@ -40,7 +146,6 @@ import pyscopedef
     
     and finally get declarations
     declLst = x->genDecls()
-    
     TypeDeps can be viewed as reversed array. indexing is from bottom to top,
     so the last element is the one that should be declared first in idl.
 """
@@ -86,6 +191,8 @@ class TypeDeps():
         Function assumes there is no processing element in the list,
         before or at startIdx position. If this position is not specified,
         assumes there is no 'processing' element at all.
+        
+        We're moving this type from bottom to top. If there is clash...(todo)
     """
     def addType(self, typeRes, startIdx = 0):
         idx = startIdx
@@ -133,10 +240,10 @@ class TypeDeps():
         idx = 0
         
         while idx < len(self):
-            if self._typeArray[idx][1] == 0:      # if is undefined
+            if self._typeArray[idx][1] == 0:      # if is ToProcess
                 resType = self._typeArray[idx]
-                resType[1] = 1                     # we've got unresolved at currIdx, processing
-                resDeps = resType[0].getDeps() # we've got type depencies now
+                resType[1] = 1                    # we've got unresolved at currIdx, processing
+                resDeps = resType[0].getDeps()    # we've got type depencies now
                 
                 self.mergeWith(resDeps, True)
                 resType[1] = 2  #processed
@@ -184,13 +291,13 @@ class TypeDeps():
     
 
 
-# Take type, resolve namespaces, add resolved ns path to global namespace
-# return the last namespace. I don't understand oO. TODO: explain
-def resolveNS(type):
+""" Take namespace, resolve it's path to parent, add this path to global NS.
+"""
+def resolveNS(resType):
     globalNS = pyscopedef.getGlobalNS()
     scopeLs = []
     
-    ltype = type
+    ltype = resType
     while ltype:
         ltype = ltype.parent
         scopeLs.append(ltype)
@@ -223,6 +330,8 @@ def resolveNS(type):
     example2: [['x','y']] ->
     x;
     y;
+    
+    empty sequence ~> nothing
 """
 def printDecls(declList, indent = 0):
     idx = 0

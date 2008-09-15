@@ -27,8 +27,7 @@ pyheader.parseheader: get classes & free functions
 ** All PPA stuff is in PPA namespace and {$PrjDir}/PPA directory
 """
 
-import os
-from pygccxml import parser
+from pygccxml import parser, declarations
 import pyheader
 import pyargs
 import pyclass
@@ -36,14 +35,59 @@ import pymisc  # debugging + designing
 
 import pydeclclass
 import pyscopedef
-
 import pytyperes
+import sys
+
+global prjDir
+prjDir = sys.path[0]
+prjDir = prjDir.rstrip('/')     # if it's just '/'
+prjDir += '/'
+
+
+# test files
+tests = [ \
+        ['tests/dbgprint.h', None] \
+        ]
+
+# when pygccxml does not find anything of particular type
+declarations.ALLOW_EMPTY_MDECL_WRAPPER = True
+
+def main():
+    runTest(0)
+
+def dbgRun(hFiles, config = None):
+    global decls        # directly from parser
+    global dbgNs       # global ns
+    global dbgPPANs    # 'my' global ns
+    
+    decls = parser.parse(hFiles, config)
+    dbgNs = declarations.get_global_namespace(decls)             # loss of information decls ?-> dbgx
+    
+    # we've got our namespace
+    dbgPPANs = pyscopedef.Namespace(dbgNs)
+    dbgPPANs.findFreeFns() # find free functions
+    
+    print '--- Free functions of global namespace ---'
+    dbgPPANs.printFreeFns()
+    
+    global dbgFnLst
+    dbgFnLst = dbgPPANs._freeFnsContainer
+    
+    global dps
+    dps = pytyperes.TypeDeps(dbgFnLst)
+    dps.resolveDeps()
+    dclst = dps.genDecls()
+    
+    pytyperes.printDecls(dclst)
+    
+    
+def runTest(iTest):
+    dbgRun([prjDir + tests[iTest][0]], tests[iTest][1])
+    
 
 altHead1 = '/home/pista/usr/projects/3proxy-0.6-devel/src/proxy.h'
 altConf1 = parser.config_t(define_symbols = ['NOODBC'])
 
-global prjDir
-prjDir = os.getcwd().rsplit('/',1)[0]
             
 # Parse, save file
 def runParser():
@@ -73,52 +117,8 @@ def dbgRun2(hFile, config = None):
        declCls.addAPIFn(func)
        
        
-""" HERE IT IS FRESH """
 
-def dbgRun(hFiles, config = None):
-    global decls        # directly from parser
-    global dbgx         # global ns
-    global globScope    # 'my' global ns
-    
-    decls = parser.parse(hFiles, config)
-    dbgx = declarations.get_global_namespace(decls)             # loss of information decls ?-> dbgx
-    
-    # we've got our namespace
-    globScope = pyscopedef.Namespace(dbgx)
-    globScope.findFreeFns()             # find free functions
-    globScope.printFreeFns()
-    
-    global dbgFn
-    dbgFn = globScope._freeFnsContainer._freeFuns[0]
-    
-    global dbgFnLst
-    dbgFnLst = globScope._freeFnsContainer
-    
-    global deps2
-    deps2 = dbgFnLst.getDeps()
-    deps2.resolveDeps()
-    
-    print 'now printing fnls stuff'
-    decls2 = deps2.genDecls()
-    pytyperes.printDecls(decls2)
-    
-    print 'now declaring all functions'
-    global fnl
-    fnl = pytyperes.TypeDeps(dbgFnLst)
-    fnl.resolveDeps()
-    
-    global dc2
-    dc2 = fnl.genDecls()
-    pytyperes.printDecls(dc2)
-    
-    
-if __name__ == '__main__':
-    dbgRun(['/home/pista/usr/projects/openppaln/misc/dbgprint.h'])
-    #declCls.printAPIFns()
-    #cfg = parser.config_t(working_directory = prjDir, include_paths = [prjDir])
-    #getDefsFromHeader(prjDir + '/parser/parsemain.h', cfg)
-    #getDefsFromHeader('/home/pista/usr/projects/3proxy-0.6-devel/src/proxy.h', None)
-    #runParser()
+       
 
 
 def dbgRunAlt1():
@@ -133,3 +133,13 @@ def dbgalt3():
     
 """ Locate and categorize definitions
 """
+
+if __name__ == '__main__':
+    main()
+    
+    #dbgRun(['./tests/dbgprint.h'])
+    #declCls.printAPIFns()
+    #cfg = parser.config_t(working_directory = prjDir, include_paths = [prjDir])
+    #getDefsFromHeader(prjDir + '/parser/parsemain.h', cfg)
+    #getDefsFromHeader('/home/pista/usr/projects/3proxy-0.6-devel/src/proxy.h', None)
+    #runParser()
