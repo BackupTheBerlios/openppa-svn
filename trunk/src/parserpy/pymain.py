@@ -36,6 +36,7 @@ import pymisc  # debugging + designing
 import pydeclclass
 import pyscopedef
 import pytyperes
+import pytypedeps
 import sys
 
 global prjDir
@@ -43,17 +44,22 @@ prjDir = sys.path[0]
 prjDir = prjDir.rstrip('/')     # if it's just '/'
 prjDir += '/'
 
-
 # test files
 tests = [ \
-        ['tests/dbgprint.h', None] \
+        ['tests/dbgprint.h', None, {}], \
+        ['tests/3proxy/proxy.h', parser.config_t(define_symbols = ['NOODBC']), {'header':'tests/3proxy/proxy.h'}]
         ]
+
+# modify some tests fields
+for test in tests:
+    if test[2].has_key('header'):
+        test[2]['header'] = prjDir + test[2]['header']
 
 # when pygccxml does not find anything of particular type
 declarations.ALLOW_EMPTY_MDECL_WRAPPER = True
 
 def main():
-    runTest(0)
+    runTest(1)
 
 def dbgRun(hFiles, config = None):
     global decls        # directly from parser
@@ -74,28 +80,23 @@ def dbgRun(hFiles, config = None):
     dbgFnLst = dbgPPANs._freeFnsContainer
     
     global dps
-    dps = pytyperes.TypeDeps(dbgFnLst)
+    dps = pytypedeps.TypeDeps(dbgFnLst)
     dps.resolveDeps()
     dclst = dps.genDecls()
     
+    print ''
     pytyperes.printDecls(dclst)
     
     
 def runTest(iTest):
+    if tests[iTest][2]:
+        pymisc.cfgMerge(tests[iTest][2])
+        
     dbgRun([prjDir + tests[iTest][0]], tests[iTest][1])
-    
-
-altHead1 = '/home/pista/usr/projects/3proxy-0.6-devel/src/proxy.h'
-altConf1 = parser.config_t(define_symbols = ['NOODBC'])
-
-            
+     
 # Parse, save file
 def runParser():
     fnProc = pyheader.procFnList(headFnList)
-    
-    fnProc.insert(0,'UniStruct* tmpMacro;')
-    fnProc.insert(0,'#include "proxygen/pgcommon.h"')
-
     pyheader.writeLDebugFile(fnProc)
 
 
@@ -115,10 +116,6 @@ def dbgRun2(hFile, config = None):
         
     for func in dbgx:
        declCls.addAPIFn(func)
-       
-       
-
-       
 
 
 def dbgRunAlt1():

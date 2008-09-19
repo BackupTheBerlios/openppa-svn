@@ -4,6 +4,11 @@
         
         _typeType:
             string variable describing Type of TypeRes ('TypedefSeq', 'Namespace', ...)
+            is also needed for hashing
+            
+        _typeName:
+            string variable containing definition. Not necessarily idl definition
+            
         Bool isEqualToType(TypeRes):
             Determines whether type is equal to it's argument.
             It utilizes _typeType variable.
@@ -12,7 +17,7 @@
         TypeDeps getDeps():
             Returns depencies of itself and all it's children.
             Implementator is not concerned with parent object, it can't know whether
-            It's inside or outside it's scope. However this information is included
+            it's inside or outside it's scope. However this information is included
             in it's definition? 'parent' variable (include formally?).
             **The difference between declaration and defintion** :specify
             
@@ -25,17 +30,9 @@
             for ex.: ['module xyz', ['member1', 'member2'], ...]
             These extra levels in tree are used to indent in declarations generation functions
             Generate decls only for itself and it's children.
-
-        *new
-        // request-swap system
-        // if X depends on Y, Y must be declared before first (move towards the end of the list)
-        // each TypeRes implementer implements sequence of depencies + seq of elements that depend on this TypeRes implementer
-        types: [Dependencies], [Dependenter]
-        ex. [x,x,self,y ,x,x]
-        self.dependsOn(y) : if self depends on y return True        # usually raises exception
-        
-        
-        
+            
+    depency resolution:
+        Every TypeRes must provide mechanism to resolve internal dependencies. See TypeRes for more information.
 
 Testing example:
 		namespace x {
@@ -89,20 +86,63 @@ resolveDeps context: In it's context resolve EXTERNAL dependencies, for example
 """
 
 import pyscopedef
+import pytypedeps
+import pytyperes
+import pymisc
 
 # interface TypeRes
 """ stub interface methods (that must be overloaded
     implements internal dependency resolution
-"""
-class TypeRes():
-    _dependencyList = None     # TypeDeps // TypeRes's I depend on
-    _dependerList = None    # TypeDeps // TypeRes's that depend on me
     
-    # this is abstract interface, do not allow instantiation
+    Example
+    x {
+        // depList
+        y {
+            ...
+        }
+        
+        z {
+            ...
+        }
+    }, where y depends on z:
+    x.getDeps = [y,z].getDeps()
+    
+"""
+# use this as base class
+class TypeRes():
+    _typeType = ''          # main type string ('Namespace', 'Class'...)
+    _typeName = '*UNKNOWN*' # declaration string. 'a::b'...
+                            # type + subtype = unique type identifier
+    
+    _orderedDepList = None  # -> 0.. = top..bottom
+    _depList = None         # {x : [y]} - where x depends on y-s # TODO SET
+    
+    # this is abstract interface, do not allow instantiation **
     def __init__(self):
-        raise Exception('can not instantate abstract interface class')
-
-    def isEqualToType(self):
+        self._orderedDepList = []
+        self._depList = []
+        
+    def __hash__(self):
+        hash(self.getUniqueIdentStr())
+    
+    def __eq__(self, other):
+        try:
+            func = getattr(other, "getUniqueIndentStr")
+            
+        except AttributeError:
+            return False
+        
+        else:
+            return self.getUniqueIdentStr() == func()
+            
+    # __str__ = __repr__
+    def __repr__(self):
+        return self.getUniqueIdentStr()
+    
+    def getUniqueIdentStr(self):
+        return '<' + self._typeType + ' ' + self._typeName + '>'
+        
+    def isEqualToType(self, otherType):
         raise Exception('can not call abstract interface methods')
 
     def getDeps(self):
@@ -110,17 +150,103 @@ class TypeRes():
 
     def genDecls(self):
         raise Exception('can not call abstract interface methods')
-
-    def initTypeResToNull(self):
-        # nul
-        self._dependencyList = TypeDeps()
-        self._dependerList = TypeDeps()
-
-    def addDependency(self, typeRes):
-        self._dependencyList.addType(typeRes)
+    
+    # internal depency resolution
+    # use: self.addInternalDeps(TypeRes->getDeps())
+    # requirement: no list(resolution in self)
+    def addInternalDeps(self, resType, resTypeDepList):
+        # if x is not in depList (and therefore not in orderedDepList)
+        #    add x to both lists, then add dependencies
+        if resType not in self._depList:
+            self._depList[resType] = resTypeDepList
+            self._orderedDepList.append(resType)
+            
+        # otherwise add it to the list. TODO: consider using sets
+        else:
+            for dep in self.resTypeDepList:
+                if dep not in self._depList[resType]:
+                    self._depList[resType].append(dep)
+            
+        # we assume resType is already in orderedDepList    
+        for dep in resTypeDepList:
+            self.addDepToOrdList(resType, dep)
+                
+    
+    # x depends on y; y before x
+    # x MUST be in both lists 
+    def addDepToOrdList(self, x, y):
+        # find x in list:
+        idx = 0
+        found = False
+        for item in self._orderedDepList:
+            if item.isEqualToType(x):
+                found = True
+                break
+            idx += 1
+            
+        if not found:
+            raise Exception('x is not in list')
         
-    def addDepender(self, typeRes):
-        self._dependerList.addType(typeRes)
+        idx2 = idx + 1
+        resolved = False
+
+        # determine whether y is after x, 
+        while idx2 < len(self._orderedDepList):
+            if self._orderedDepList[idx2].isEqualToType():
+                lift(idx2, idx)
+                resolved = True
+                break
+            
+            idx2 += 1
+            
+        # either there was an error, y was lifted before x, or y is not in list
+        # add y bef. x
+        idx2 = 0
+        
+        if not resolved:
+            while idx2 < idx:
+                if self._orderedDepList[idx2].isEqualToType(y):
+                    resolved = True
+                    break # do not use return
+        
+        if not resolved:
+            # y is not in the list
+            self._orderedDepList.insert(idx, y) 
+        
+    # lift item at itemIdx in _orderedDepList to whereIdx
+    # similar to insert@insertSort
+    def lift(self, itemIdx, whereIdx):
+        assert itemIdx < len(self._orderedDepList), whereIdx < len(self._orderedDepList)
+        assert itemIdx >= 0, whereIdx >= 0
+        
+        if not (itemIdx > whereIdx):
+            raise Exception('reverse and nop lift is not allowed')
+        
+        idx = itemIdx
+        # at the end, 
+        while whereIdx + 1 > idx:
+            self.liftSwap(itemIdx, itemIdx - 1)
+        
+        assert whereIdx + 1 == idx
+        self.liftSwap(idx-1, idx)
+        
+    
+    # swap idx, idx+1
+    # ignoreDep: depency checking; if == True, do simple swap without any dependency checking
+    def liftSwap(self, idx):
+        assert idx + 1 < self._orderedDepList, idx >= 0
+        s0 = self._orderedDepList[idx]
+        s1 = self._orderedDepList[idx+1]
+        
+        # s1 must not depend on s0
+        for dep in self._depList.get(s1,[]):
+            if s0 == dep:
+                raise Exception('liftSwap: cycle detected while swapping s0=%s with s1=%s \
+                                s1 depends on s0' % (s0, s1))
+            
+        # finally swap
+        self._orderedDepList[idx] = s1
+        self._orderedDepList[idx+1]=s0
         
     # search for typeRes in depencyList
     # todo: don't access private var's of TypeDep
@@ -130,165 +256,7 @@ class TypeRes():
                 return True
             
         return False    # we expect this
-        
-    """ Move down in idl declaration; move towards beginning of _
-    """
-    def moveDown(self):
-        pass
-
-""" Depency resolution, generation of declarations
-    Lifecycle: I have type (TypeRes) t, I want to get all depencies
-    x = TypeDeps()
-    x->addType(t)
-    # alternatively x = TypeDeps(t)
-    
-    x->resolveDeps()
-    
-    and finally get declarations
-    declLst = x->genDecls()
-    TypeDeps can be viewed as reversed array. indexing is from bottom to top,
-    so the last element is the one that should be declared first in idl.
-"""
-class TypeDeps():
-    # most important variable
-    # [[Type, Status]]: Type = PPA type, FreeFnList, FreeFunc, CClass, ...
-    #                   Status = int (0: ToProcess, 1: Processing, 2: Processed)
-    _typeArray = None
-    
-    """ Create new TypeDeps object.
-        Optional argument types: can be list of TypeRes-s or TypeRes
-    """
-    def __init__(self, typeInit = None):
-        self._typeArray = []
-        
-        if typeInit == None:
-            pass    # default
-        
-        elif type(typeInit) == list:
-            for typ in typeInit:
-                self.addType(typ)
                 
-        else:   # we assume type == TypeRes
-            self.addType(typeInit)
-        
-    """ TypeDeps can be viewed as list of TypeRes-s
-    
-        --- internal ---
-        There is no need for end-user to be concerned with Status of particular TypeRes.
-        Either all are ToProcess or all are Processed.
-    """
-    def __getitem__(self, key):
-        return self._typeArray[key][0]
-    
-    def __len__(self):
-        return len(self._typeArray)
-        
-
-    """ Add new TypeRes to resolution (for TypeDeps use mergeWith)
-        Outside this class, don't use startIdx parameter!
-        
-        --- internal ---
-        Function assumes there is no processing element in the list,
-        before or at startIdx position. If this position is not specified,
-        assumes there is no 'processing' element at all.
-        
-        We're moving this type from bottom to top. If there is clash...(todo)
-    """
-    def addType(self, typeRes, startIdx = 0):
-        idx = startIdx
-        while idx < len(self._typeArray):
-            if self[idx].isEqualToType(typeRes):
-                break
-            idx += 1
-            
-        # if we're here, it means we should add dependency
-        if idx >= len(self._typeArray):     # if the type is not in deparray
-            self._typeArray.append([typeRes,0])
-            
-            
-    """ Resolve dependencies of everything in typeList.
-        This dependency resolution can detect cycles
-        
-        --- offtopic ---
-        and say cycles are not supported, because cycles are not supported yet.
-        Some cycles might be supported. TODO. Some cycles are really useful.
-        Hmm, will this be read by anyone besides me? Who knows.
-        
-        --- internal ---
-        We assume there are no duplicate (equalTo) elements. see addType function.
-        Take first element, flag it as processing, get all it's depencies, merge.
-        Flag it as processed. Do this for each element in the array.
-        
-        Example: typeDeps = [x,x,x,x,x].
-        Flag first as 'processing': [*,x,x,x,x]
-        Get first item dependencies: [*,x,x,x,x]; * = [y,y]
-        Then we merge it: [*,x,x,x,x].mergeWith([y,y])
-        And we get result: [+,x,x,x,x,y]. One y is gone because it was same as one x.
-        The other Y. Then proceed to the next x; then y, etc...
-        
-        In this case: [+, + = y, *, x, ...] -> where depency is already placed
-        before 'resolving' element there is a problem; there may be cycle, or not.
-        We must try to reloate that element (+=y) after *.
-        hmm, todo or something?. Right now it displays warning message
-        
-        
-        ***ALWAYS*** go this way. The resolution goes from bottom to top; the array
-        can only look like this [+,+,*,x,x,x], NO [+,x,+,...]. So [resolved] + resolving + [to resolve]
-        
-    """
-    def resolveDeps(self):
-        idx = 0
-        
-        while idx < len(self):
-            if self._typeArray[idx][1] == 0:      # if is ToProcess
-                resType = self._typeArray[idx]
-                resType[1] = 1                    # we've got unresolved at currIdx, processing
-                resDeps = resType[0].getDeps()    # we've got type depencies now
-                
-                self.mergeWith(resDeps, True)
-                resType[1] = 2  #processed
-                
-            idx += 1
-            
-    """ Merge self(TypeDep) with another TypeDep.
-        Dont use processing argument!
-        x->mergeWith(y) merges y into x. y can (don't have to) be deleted.
-        
-        --- internal ---
-        case: x->mergeWith(y)
-        y must not have 'processing' element. Handles Processed and ToProcess element
-        the same way (TODO: specify for user).
-        
-        if processing == False:
-            it's like calling addType for each element in the array
-            
-        elif processing == True (by example):
-            list == [resolved] + resolving + [to resolve] <= invariantc
-            [x,x,x,x,x,x] -> this is a list of depencies
-    """
-    def mergeWith(self, typeDeps, processing = False):
-        for dep in typeDeps:
-            # todo: PROCESSED NON-PROCESS ?? merge what lists
-            idx = 0
-            
-            if processing:       # definition can't be BEFORE depcy
-                while self._typeArray[idx][1] != 1:
-                    if self[idx].isEqualToType(dep):
-                        raise NotImplementedException('mergeWith. something is before dependable')
-                    idx += 1
-                
-            # so add the dependency
-            self.addType(dep, idx)
-
-    # -----------------------------------------------
-        
-    # genDeclStr for each type
-    # 
-    def genDecls(self):
-        retArray = [x.genDecls() for x in self]
-        retArray.reverse()
-        return retArray
-    
 
 
 """ Take namespace, resolve it's path to parent, add this path to global NS.
@@ -300,6 +268,7 @@ def resolveNS(resType):
     ltype = resType
     while ltype:
         ltype = ltype.parent
+        #pymisc.cfgSet('ltype_error', ltype)
         scopeLs.append(ltype)
 
     # go from global ns to our namespace
@@ -316,7 +285,7 @@ def resolveNS(resType):
 
 """ Print declarations from list declList
     indent = indentation level (tab = 4 spaces)
-
+/f/
     declList :: [str | declList]
     if declList in list is preceded by str, put that list in str-named scope,
     otherwise put it in unnamed scope

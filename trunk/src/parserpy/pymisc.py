@@ -3,6 +3,34 @@ from pygccxml import parser,declarations
 """ IN: functions
     OUT: classes, datatypes of arguments + return values
 """
+
+# static config container
+try:
+    cfgDict
+except NameError:
+    cfgDict = {}
+
+
+def cfgGet(key):
+    global cfgDict
+    try:
+        return cfgDict[key]
+    except:
+        return None
+    
+def cfgSet(key, value, overwrite = False):
+    global cfgDict
+    if not overwrite and cfgDict.has_key(key):
+        raise Exception('cfgDict already has this key')
+    
+    else:
+        cfgDict[key] = value
+    
+def cfgMerge(dict2):
+    global cfgDict
+    cfgDict.update(dict2)
+    
+
 def freeFnTypes(funs):
     typeList = {}
     for func in funs:

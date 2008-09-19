@@ -8,6 +8,7 @@ In every namespace is _PPAps interface (ppa plugin-static). *future PPAa[pp]s?
 import pymisc
 import pytypes
 import pytyperes
+import pytypedeps
 
 # FreeFnContainer is leaf (with is FreeFns), so it doesn't have internal dependencies
 # Nothing can depend on it (and FreeFns)
@@ -15,7 +16,6 @@ class FreeFnsContainer(pytyperes.TypeRes):
     _freeFuns = None        # FreeFunctions
     
     def __init__(self):
-        self.initTypeResToNull() # has no dependencies, may depend on something **relevance
         self._freeFuns = []
     
     def isEqualToType(self, type):
@@ -32,11 +32,9 @@ class FreeFnsContainer(pytyperes.TypeRes):
     def addFuns(self, freeFuns):
         self._freeFuns.extend(freeFuns)
         
-    # Dependency list. Exclude itself
-    # is not class/namespace (even if it's mapped to idl interface)
-    # pass dependencies of it's fns to upper level
+    # There are no internal depencies. Pass everything to caller
     def getDeps(self):
-        deps = pytyperes.TypeDeps()
+        deps = pytypedeps.TypeDeps()
         for freeFunc in self._freeFuns:
             deps.mergeWith(freeFunc.getDeps())
             
@@ -56,7 +54,7 @@ class FreeFnsContainer(pytyperes.TypeRes):
     
 # Implements isEqualToType
 # TODO: is this typeres?
-class FreeFunc:
+class FreeFunc():
     _pgxDecl = None
     _retType = None
     _argTypes = None
@@ -67,9 +65,12 @@ class FreeFunc:
         self._retType = pytypes.TypedefSeq(func.return_type)
         
         argTypes = []
+#        try:
         for arg in func.arguments:
             argTypes.append(pytypes.TypedefSeq(arg.type))
-            
+ #       except:
+        #raise Exception('nondecl in function:' + func.name)
+                
         self._argTypes = argTypes
         
     # TypeDeps interface(1/2)
@@ -83,7 +84,7 @@ class FreeFunc:
     # TypeDeps interface(2/2)
     # this is always leaf (in ns/class tree). It's dependencies are all composite types, or typedef
     def getDeps(self):
-        return pytyperes.TypeDeps([self._retType] + self._argTypes)
+        return pytypedeps.TypeDeps([self._retType] + self._argTypes)
         
     # declaration is always absolute for it's argumentes (todo: future)
     def genDecls(self):

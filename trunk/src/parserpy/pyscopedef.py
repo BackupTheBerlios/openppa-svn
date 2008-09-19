@@ -25,6 +25,9 @@ Contain children classes
 
 import pygccxml.declarations as decls
 import pyplugapi
+import pytyperes
+import pytypedeps
+import pymisc
 
 """ There is one global namespace per project (task). getGlobalNS, setGlobalNS
     are wrappers around globalNS variable that can be set only once.
@@ -49,7 +52,7 @@ def setGlobalNS(ns):
 """ Scopedef has 2 children: class, namespace
     Implements TypeRes interface.
 """
-class Scopedef():
+class Scopedef(pytyperes.TypeRes):
     _pgxDecl = None
     _parent = None          # Namespace or Class (scopedef)
     _typeType = ''
@@ -102,7 +105,10 @@ class Namespace(Scopedef):
         # namespace can have only NS parent
         else:
             parent._childNamespaces.append(self)
-      
+            
+        self._typeName = self._pgxDecl.decl_string
+        self._pgxDecl.ALLOW_EMPTY_MDECL_WRAPPER = True
+        
     # ---------------------------
     # --- Search declarations ---
     # ---------------------------
@@ -110,7 +116,12 @@ class Namespace(Scopedef):
     """ find free functions (typically api)
     """ 
     def findFreeFns(self):
-        fnList = self._pgxDecl.free_funs(recursive = False)     # we want to keep it in our namespaces
+        headerFile = pymisc.cfgGet('header')
+        if headerFile:
+            fnList = self._pgxDecl.free_funs(recursive = False, header_file = headerFile)     # we want to keep it in our namespaces
+        else:
+            fnList = self._pgxDecl.free_funs(recursive = False)     # we want to keep it in our namespaces
+            
         freeFuns = []
         for fn in fnList:
             if not fn.name.startswith('__builtin_'):
@@ -123,6 +134,9 @@ class Namespace(Scopedef):
     def findClasses(self):
         clsList = self._pgxDecl.classes()
         
+    # impl in base?
+    def isChild(self, typeRes):
+        return typeRes.typeName.startswith(self.typeName)
     # ------------------------------
     # --- TypeRes implementation ---
     # ------------------------------
@@ -130,17 +144,16 @@ class Namespace(Scopedef):
     # dependencies are all things inside the namespace
     # deps = FreeFnLst + Classes (recurs.) + Namespace-s
     # dependency resolution
-    def getDeps(self      ):
-        return [self._freeFnsContainer]
-    
+    def getDeps(self):
+        # part1; freeFunctions
+        deps = self._freeFnsContainer.getDeps()
+        # resolve internal depencies
+        children = filter(self.isChild, deps)
+        self.addInternalDeps(self._freeFnsContainer, children)
+        
     # Namespace declaration: i am only a namespace wtf
     def genDecls(self):
         return ['module ' + self._pgxDecl.decl_string, self._freeFnsContainer.genDecls()]
-    
-    # checks whether type is in this scope
-    def isTypeInClass(self, typeRes):
-        for ns in self._childNamespaces:
-            if ns.isEqualToType(typeRes)
     
     # --------------
     # --- others ---
@@ -149,7 +162,7 @@ class Namespace(Scopedef):
         self._freeFnsContainer.printFnsNat()
         
     """ return child by name
-s        must be only that exists in source (pygccxml)
+        must be only that exists in source (pygccxml)
     """
     def childScope(self, childScope):
         for child in self._childNamespaces:

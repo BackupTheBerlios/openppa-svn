@@ -14,27 +14,32 @@
 import pygccxml.declarations as decls
 import pyscopedef
 import pytyperes
+import pytypedeps
+import pymisc
 
-def getTypePPA(type):
+def getTypePPA(ptype):
     """Determines arg type"""
     # not sure if these two cases can ever happen------------
-    if  declarations.is_pointer(type):
-        return TypedefSeq(type)
+    if  decls.is_pointer(ptype):
+        return TypedefSeq(ptype)
         
-    elif declarations.is_fundamental(type):
+    elif decls.is_fundamental(ptype):
         return []
     # -------------------------------------------------------
     
-    elif  declarations.is_class(type):
-        return pyscopedef.CClass(type, pytyperes.resolveNS(type))
+    elif  decls.is_class(ptype):
+        return pyscopedef.CClass(ptype, pytyperes.resolveNS(ptype))
     
     else:
         raise Exception('getTypePPA::unknown type (maybe enum or something)')
     #for argDec in argDecom
     
 # Fundamental type, SequenceOf Types
-class TypedefSeq():
+# *TypeRes*
+class TypedefSeq(pytyperes.TypeRes):
+    # _typeName; _typeType from pyt
     _pgxDecl = None      # base declaration
+    _typeType = 'Typedef'
     
     _level = 0           # 0 = Base Type, pointlesss
     _levelOfVar = 0      # further explanation!
@@ -53,7 +58,10 @@ class TypedefSeq():
     def __init__(self, decl):
         decom = decls.decompose_type(decl)
         decom.reverse()
-        self._pgxDecl = base = decom[0]
+        self._pgxDecl = base = decls.type_traits.remove_declarated(decom[0])
+        
+        if 'declarated' in str(type(base)):
+            pymisc.cfgSet('declarated', base)
         
         # type base is either fundamental type or class/enum/else
         if decls.type_traits.is_fundamental(base):
@@ -66,18 +74,19 @@ class TypedefSeq():
             self._baseTypeName = self._deriveTypeName = base.decl_string.lstrip('::') ## TODO: maybe need to stripall a::b::[actual name]
         
         # array / ptr -> corba sequence
-        for type in decom[1:]:
-            if decls.type_traits.is_pointer(type) or decls.type_traits.is_array(type):
+        for ptype in decom[1:]:
+            if decls.type_traits.is_pointer(ptype) or decls.type_traits.is_array(ptype):
                 self._incDimension()
                 
         self._levelOfVar = self._level
+        self._typeName = self.getTypeName
                 
-    def isEqualToType(self, type):
+    def isEqualToType(self, ptype):
         # access private member TODO eliminate (or not)
-        if hasattr(type,'_levelOfVar'): # it is TypedefSeq
-            if(self._baseName == type._baseName): # it's the same
-                if self._level < type._level: #level correction
-                    self._level = type._level
+        if hasattr(ptype,'_levelOfVar'): # it is TypedefSeq
+            if(self._baseName == ptype._baseName): # it's the same
+                if self._level < ptype._level: #level correction
+                    self._level = ptype._level
                     
                 return True
         
@@ -87,7 +96,7 @@ class TypedefSeq():
     # TODO: FOR EACH!!!!11
     def getDeps(self):
         if decls.type_traits.is_fundamental(self._pgxDecl):
-            return pytyperes.TypeDeps()
+            return pytypedeps.TypeDeps()
         
         elif decls.type_traits.is_pointer(self._pgxDecl):
             raise Exception('TypedefSeq base can not be pointer!')
@@ -97,7 +106,7 @@ class TypedefSeq():
             return depType.getDeps()
                 
     def isCompat(self, decl):
-        decom = pygccxml.declarations.decompose_type(decl)
+        decom = decls.decompose_type(decl)
         decom.reverse()
         return decom[0].decl_string == self._baseName
     
@@ -124,13 +133,13 @@ class TypedefSeq():
     # increase dimension if necessary
     def merge(self, decl):
         currLvl = 0
-        decom = pygccxml.declarations.decompose_type(decl)
+        decom = decls.decompose_type(decl)
         decom.reverse()
         if not self._isCompatBaseDirect(decom[0]):
             raise Exception('TypedefSeq::merge types not compatible')
         
-        for type in typeDecom[1:]:
-            if decls.type_traits.is_pointer(type) or decls.type_traits.is_array(type):
+        for ptype in typeDecom[1:]:
+            if decls.type_traits.is_pointer(ptype) or decls.type_traits.is_array(ptype):
                 currLvl += 1
                 if currLvl > self._level:
                     self._incDimension()
@@ -293,9 +302,9 @@ class TypeTreeContainer():
     _baseDict = {}  # dict of {baseName :: <BaseType class>}
     
     # return typeName
-    def addType(self, type):
+    def addType(self, ptype):
         # make REVERSED decl string -> standard procedure
-        typeDecom = decls.type_traits.decompose_type(type)
+        typeDecom = decls.type_traits.decompose_type(ptype)
         typeDecom.reverse()
         baseName = typeDecom[0].decl_string
         
@@ -349,8 +358,8 @@ class BaseType():
             self._baseTypeName = self._deriveTypeName = base.decl_string.lstrip('::')
         
         # array / ptr -> corba sequence
-        for type in typeDecom[1:]:
-            if decls.type_traits.is_pointer(type) or decls.type_traits.is_array(type):
+        for ptype in typeDecom[1:]:
+            if decls.type_traits.is_pointer(ptype) or decls.type_traits.is_array(ptype):
                 self._incDimension()
                 
                     
