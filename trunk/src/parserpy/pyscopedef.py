@@ -166,7 +166,7 @@ class Namespace(Scopedef):
     """
     def childScope(self, childScope):
         for child in self._childNamespaces:
-            if child.getDecl().decl_string == childName:
+            if child.getDecl().decl_string == childScope.decl_string:
                 return child
             
         # we didn't find the child namespace, soo make me a child
@@ -185,6 +185,7 @@ class CClass(Scopedef):             # avoid name clash
     def __init__(self, decl, parent):
         Scopedef.__init__(self, decl, parent)
         self._childClasses = []
+        self._typeName = decl.decl_string
         
         # assign itself to global NS
         # TODO is this necessarry?
@@ -195,13 +196,29 @@ class CClass(Scopedef):             # avoid name clash
             parentDecl = parent.getDecl()
             if decls.type_traits.is_class(parentDecl):
                 parent._childClasses.append(self)
-                f
+                
             elif decls.type_traits.is_namespace(parentDecl):
                 parent._childNamespaces.append(self)
-            
         
     def findFreeFns(self):
         raise NotImplementedError('CClass::findFreeFns')
         
     def getDeps(self):      # class depends on parent only?, and itself(definition)
-        return [self._parent]
+        return []
+        #return [self._parent]
+
+    def genDecls(self):
+        if not isinstance(self._pgxDecl, decls.class_t):
+            return ['<Nonclass type ' + str(self._pgxDecl) + ' declaration>']
+            
+        self._pgxDecl.ALLOW_EMPTY_MDECL_WRAPPER = True
+        clsDecl = '<Class ' + self._typeName + ' declaration>' # default undefined fallback (not used here)
+        
+        memList = [] #member variables
+        memList = ['variables', [x.name for x in self._pgxDecl.get_members()]]
+        
+        fnList = []
+        fnList = ['member functions', [x.name for x in self._pgxDecl.mem_funs()]]
+        #for arg in self._pgxDecl.arguments:
+        #    arg
+        return ['module ' + self._pgxDecl.name, [memList + fnList]]

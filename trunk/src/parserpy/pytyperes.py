@@ -25,7 +25,7 @@
             class is parent of all it's members
             function is parent of it's return type and arguments
             
-        TreeStrLs genDeclString():
+        TreeStrLs genDecls():
             TreeStrLs :: [str | TreeStrLs]
             for ex.: ['module xyz', ['member1', 'member2'], ...]
             These extra levels in tree are used to indent in declarations generation functions
@@ -266,10 +266,11 @@ def resolveNS(resType):
     scopeLs = []
     
     ltype = resType
-    while ltype:
-        ltype = ltype.parent
-        #pymisc.cfgSet('ltype_error', ltype)
-        scopeLs.append(ltype)
+    if ltype:
+        while True:
+            ltype = ltype.parent
+            if not ltype: break
+            scopeLs.append(ltype)
 
     # go from global ns to our namespace
     # if there is not, generate new namespace
@@ -279,6 +280,12 @@ def resolveNS(resType):
     
     # walk/generate namespaces
     for scope in scopeLs:
+        
+        if scope == None:
+            pymisc.cfgSet('scopeLs', scopeLs)
+            raise Exception('none scope caught')
+        
+        
         currScope = globalNS.childScope(scope)
         
     return currScope
@@ -326,7 +333,12 @@ def printDecls(declList, indent = 0):
         elif type(declList[idx]) == list:
             printDecls(declList[idx], indent)
             
+        elif type(declList[idx]) == type(None):
+            print '***Warning: none in declList!!!***'
+            pass
+        
         else:
+            print declList
             raise Exception('pytyperes::printDecls unrecognized type')
         
         idx += 1

@@ -31,7 +31,9 @@ def getTypePPA(ptype):
         return pyscopedef.CClass(ptype, pytyperes.resolveNS(ptype))
     
     else:
-        raise Exception('getTypePPA::unknown type (maybe enum or something)')
+        print 'WARNING: unknown type:' + str(ptype)
+        return pyscopedef.CClass(ptype, pytyperes.resolveNS(ptype))
+        #raise Exception('getTypePPA::unknown type (maybe enum or something)')
     #for argDec in argDecom
     
 # Fundamental type, SequenceOf Types
@@ -103,7 +105,7 @@ class TypedefSeq(pytyperes.TypeRes):
         
         else:
             depType =  getTypePPA(self._pgxDecl)
-            return depType.getDeps()
+            return pytypedeps.TypeDeps(depType)
                 
     def isCompat(self, decl):
         decom = decls.decompose_type(decl)
@@ -244,7 +246,7 @@ def funIdlMapping(funType):
     #               'jbyte'                     : 'a',
     #               'jboolean'                  : 'a',
                     }
-    return funMapTable.get(funType.decl_string, 'UNDEFINED')
+    return funMapTable.get(funType.decl_string, 'UNDEFINED(' + funType.decl_string + ')')
 
 # in sync with funIdlMapping
 # todo: check 32/64
@@ -291,7 +293,7 @@ def funIdlMappingShort(funType):
     #               'jbyte'                     : 'a',
     #               'jboolean'                  : 'a',
                     }
-    return funMapTable.get(funType.decl_string, 'UNDEFINED')
+    return funMapTable.get(funType.decl_string, 'UNDEFINED('+funType.decl_string+')')
 
 
 # We've got a function, it has some types.
