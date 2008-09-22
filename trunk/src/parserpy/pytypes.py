@@ -12,9 +12,9 @@
 # TODO: shortcut 4string
 
 import pygccxml.declarations as decls
-import pyscopedef
-import pytyperes
-import pytypedeps
+import pyscope
+import pyresolvable
+import pydeps
 import pymisc
 
 def getTypePPA(ptype):
@@ -28,17 +28,17 @@ def getTypePPA(ptype):
     # -------------------------------------------------------
     
     elif  decls.is_class(ptype):
-        return pyscopedef.CClass(ptype, pytyperes.resolveNS(ptype))
+        return pyscope.CClass(ptype, pyresolvable.resolveNS(ptype))
     
     else:
         print 'WARNING: unknown type:' + str(ptype)
-        return pyscopedef.CClass(ptype, pytyperes.resolveNS(ptype))
+        return pyscope.CClass(ptype, pyresolvable.resolveNS(ptype))
         #raise Exception('getTypePPA::unknown type (maybe enum or something)')
     #for argDec in argDecom
     
 # Fundamental type, SequenceOf Types
 # *TypeRes*
-class TypedefSeq(pytyperes.TypeRes):
+class TypedefSeq(pyresolvable.TypeRes):
     # _typeName; _typeType from pyt
     _pgxDecl = None      # base declaration
     _typeType = 'Typedef'
@@ -98,14 +98,14 @@ class TypedefSeq(pytyperes.TypeRes):
     # TODO: FOR EACH!!!!11
     def getDeps(self):
         if decls.type_traits.is_fundamental(self._pgxDecl):
-            return pytypedeps.TypeDeps()
+            return pydeps.TypeDeps()
         
         elif decls.type_traits.is_pointer(self._pgxDecl):
             raise Exception('TypedefSeq base can not be pointer!')
         
         else:
             depType =  getTypePPA(self._pgxDecl)
-            return pytypedeps.TypeDeps(depType)
+            return pydeps.TypeDeps(depType)
                 
     def isCompat(self, decl):
         decom = decls.decompose_type(decl)

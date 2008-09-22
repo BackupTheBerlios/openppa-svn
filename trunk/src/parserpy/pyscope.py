@@ -24,9 +24,9 @@ Contain children classes
 """
 
 import pygccxml.declarations as decls
-import pyplugapi
-import pytyperes
-import pytypedeps
+import pyfreefns
+import pyresolvable
+import pydeps
 import pymisc
 
 """ There is one global namespace per project (task). getGlobalNS, setGlobalNS
@@ -52,7 +52,7 @@ def setGlobalNS(ns):
 """ Scopedef has 2 children: class, namespace
     Implements TypeRes interface.
 """
-class Scopedef(pytyperes.TypeRes):
+class Scopedef(pyresolvable.TypeRes):
     _pgxDecl = None
     _parent = None          # Namespace or Class (scopedef)
     _typeType = ''
@@ -97,7 +97,7 @@ class Namespace(Scopedef):
         
         self._childNamespaces = []
         self._childClasses = []
-        self._freeFnsContainer = pyplugapi.FreeFnsContainer()
+        self._freeFnsContainer = pyfreefns.FreeFnsContainer()
 
         if parent == None:  # global NS
             setGlobalNS(self)
@@ -125,7 +125,7 @@ class Namespace(Scopedef):
         freeFuns = []
         for fn in fnList:
             if not fn.name.startswith('__builtin_'):
-                freeFuns.append(pyplugapi.FreeFunc(fn))     # if it's not builtin, then it's okay
+                freeFuns.append(pyfreefns.FreeFunc(fn))     # if it's not builtin, then it's okay
                 
         self._freeFnsContainer.addFuns(freeFuns)
         

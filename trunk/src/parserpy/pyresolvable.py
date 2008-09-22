@@ -85,9 +85,9 @@ resolveDeps context: In it's context resolve EXTERNAL dependencies, for example
 => internal/external dependency resolution
 """
 
-import pyscopedef
-import pytypedeps
-import pytyperes
+import pyscope
+import pydeps
+import pyresolvable
 import pymisc
 
 # interface TypeRes
@@ -262,7 +262,7 @@ class TypeRes():
 """ Take namespace, resolve it's path to parent, add this path to global NS.
 """
 def resolveNS(resType):
-    globalNS = pyscopedef.getGlobalNS()
+    globalNS = pyscope.getGlobalNS()
     scopeLs = []
     
     ltype = resType
@@ -274,7 +274,7 @@ def resolveNS(resType):
 
     # go from global ns to our namespace
     # if there is not, generate new namespace
-    # this functionality is in pyscopedef module
+    # this functionality is in pyscope module
     scopeLs.reverse()       # from top to bottom
     currScope = globalNS
     
@@ -328,7 +328,7 @@ def printDecls(declList, indent = 0):
                 idx += 1        # += 2 ttl
                 
             else:
-                raise Exception('pytyperes::printDecls unrecognized type')
+                raise Exception('pyresolvable::printDecls unrecognized type')
                 
         elif type(declList[idx]) == list:
             printDecls(declList[idx], indent)
@@ -339,7 +339,7 @@ def printDecls(declList, indent = 0):
         
         else:
             print declList
-            raise Exception('pytyperes::printDecls unrecognized type')
+            raise Exception('pyresolvable::printDecls unrecognized type')
         
         idx += 1
             

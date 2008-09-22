@@ -7,12 +7,12 @@ In every namespace is _PPAps interface (ppa plugin-static). *future PPAa[pp]s?
 
 import pymisc
 import pytypes
-import pytyperes
-import pytypedeps
+import pyresolvable
+import pydeps
 
 # FreeFnContainer is leaf (with is FreeFns), so it doesn't have internal dependencies
 # Nothing can depend on it (and FreeFns)
-class FreeFnsContainer(pytyperes.TypeRes):
+class FreeFnsContainer(pyresolvable.TypeRes):
     _freeFuns = None        # FreeFunctions
     
     def __init__(self):
@@ -34,7 +34,7 @@ class FreeFnsContainer(pytyperes.TypeRes):
         
     # There are no internal depencies. Pass everything to caller
     def getDeps(self):
-        deps = pytypedeps.TypeDeps()
+        deps = pydeps.TypeDeps()
         for freeFunc in self._freeFuns:
             deps.mergeWith(freeFunc.getDeps())
             
@@ -84,7 +84,7 @@ class FreeFunc():
     # TypeDeps interface(2/2)
     # this is always leaf (in ns/class tree). It's dependencies are all composite types, or typedef
     def getDeps(self):
-        return pytypedeps.TypeDeps([self._retType] + self._argTypes)
+        return pydeps.TypeDeps([self._retType] + self._argTypes)
         
     # declaration is always absolute for it's argumentes (todo: future)
     def genDecls(self):

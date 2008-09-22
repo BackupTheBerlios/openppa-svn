@@ -4,7 +4,7 @@ This class is a data container for functions, it's types, results of parsing ope
 
 import pygccxml.declarations as decls
 import pymisc
-import pyplugapi
+import pyfreefns
 import pytypes
 
 class DeclCls:
@@ -13,7 +13,7 @@ class DeclCls:
         
     def __init__(self):
         self._types = pytypes.TypeTreeContainer()
-        self._funs = pyplugapi.FreeFnsContainer()
+        self._funs = pyfreefns.FreeFnsContainer()
     
     # functions
     # add* functions todo: type clashes
@@ -32,7 +32,7 @@ class DeclCls:
         
     def genAPIFnIdl(self):
         for fn in self._apiFuns.values():
-            print pyplugapi.genIdlFn(fn)
+            print pyfreefns.genIdlFn(fn)
         
     # debugging
     def printAPIFns(self):

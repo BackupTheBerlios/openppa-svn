@@ -28,15 +28,10 @@ pyheader.parseheader: get classes & free functions
 """
 
 from pygccxml import parser, declarations
-import pyheader
-import pyargs
-import pyclass
-import pymisc  # debugging + designing
-
-import pydeclclass
-import pyscopedef
-import pytyperes
-import pytypedeps
+import pymisc  # useful functions + debugging
+import pyscope
+import pyresolvable
+import pydeps
 import sys
 
 global prjDir
@@ -70,7 +65,7 @@ def dbgRun(hFiles, config = None):
     dbgNs = declarations.get_global_namespace(decls)             # loss of information decls ?-> dbgx
     
     # we've got our namespace
-    dbgPPANs = pyscopedef.Namespace(dbgNs)
+    dbgPPANs = pyscope.Namespace(dbgNs)
     dbgPPANs.findFreeFns() # find free functions
     
     print '--- Free functions of global namespace ---'
@@ -80,12 +75,12 @@ def dbgRun(hFiles, config = None):
     dbgFnLst = dbgPPANs._freeFnsContainer
     
     global dps
-    dps = pytypedeps.TypeDeps(dbgFnLst)
+    dps = pydeps.TypeDeps(dbgFnLst)
     dps.resolveDeps()
     dclst = dps.genDecls()
     
     print ''
-    pytyperes.printDecls(dclst)
+    pyresolvable.printDecls(dclst)
     
     
 def runTest(iTest):
