@@ -1,20 +1,22 @@
 """ Depency resolution, generation of declarations
-    Lifecycle: I have type (TypeRes) t, I want to get all depencies
+    It works like this: I have type(TypeRes) t; I want to get all dependencies
     x = TypeDeps()
     x->addType(t)
-    # alternatively x = TypeDeps(t)
+    or alternatively x = TypeDeps(t)
     
+    # automatically resolve all depencies, internal and external
     x->resolveDeps()
     
-    and finally get declarations
+    and finally generate declarations
     declLst = x->genDecls()
+    
     TypeDeps can be viewed as reversed array. indexing is from bottom to top,
     so the last element is the one that should be declared first in idl.
 """
 class TypeDeps():
     # most important variable
-    # [[Type, Status]]: Type = PPA type, FreeFnList, FreeFunc, CClass, ...
-    #                   Status = int (0: ToProcess, 1: Processing, 2: Processed)
+    # [[Type, Status]]: Type is TypeRes. FreeFnList, FreeFunc, CClass, ...
+    #                   Status is int (0: ToProcess, 1: Processing, 2: Processed)
     _typeArray = None
     
     """ Create new TypeDeps object.
@@ -90,7 +92,7 @@ class TypeDeps():
         
         In this case: [+, + = y, *, x, ...] -> where depency is already placed
         before 'resolving' element there is a problem; there may be cycle, or not.
-        We must try to reloate that element (+=y) after *.
+        We must try to relocate that element (+=y) after *.
         hmm, todo or something?. Right now it displays warning message
         
         

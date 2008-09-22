@@ -80,13 +80,18 @@ class Scopedef(pyresolvable.TypeRes):
     """
     def doesContainType(self):
         pass
+    
+    """ Class + Namespace must implement this
+    """
+    def childScope(self):
+        raise Exception('scope::childScope Not implemented')
 """ 
     container of everything
 """
 class Namespace(Scopedef):
     _childNamespaces = None   # Array of namespaces
-    _childClasses = None
-    _freeFnsContainer = None  # (usually?) Plugin API (events)
+    _childClasses = None      #       of classes
+    _freeFnsContainer = None  # Usually Plugin API (events)
     _typeType = 'Namespace'
     
     # init with declaration
@@ -113,10 +118,10 @@ class Namespace(Scopedef):
     # --- Search declarations ---
     # ---------------------------
     
-    """ find free functions (typically api)
+    """ Find free functions. Typically plugin API (events)
     """ 
     def findFreeFns(self):
-        headerFile = pymisc.cfgGet('header')
+        headerFile = pymisc.cfgGet('header', True)
         if headerFile:
             fnList = self._pgxDecl.free_funs(recursive = False, header_file = headerFile)     # we want to keep it in our namespaces
         else:
@@ -132,22 +137,40 @@ class Namespace(Scopedef):
     """ all classes in namespace
     """
     def findClasses(self):
-        clsList = self._pgxDecl.classes()
+        headerFile = pymisc.cfgGet('header', True)
+        if headerFile:
+            clsList = self._pgxDecl.classes(recursive = False, header_file = headerFile)
+        else:
+            clsList = self._pgxDecl.classes(recursive = False)
+            
+        self._childClasses = clsList
         
-    # impl in base?
+    """ Our namespace is ::a, class ::a::b. Class is in namespace. Simple.
+    """
     def isChild(self, typeRes):
         return typeRes.typeName.startswith(self.typeName)
     # ------------------------------
     # --- TypeRes implementation ---
     # ------------------------------
     
-    # dependencies are all things inside the namespace
-    # deps = FreeFnLst + Classes (recurs.) + Namespace-s
-    # dependency resolution
+    """ dependencies are all things inside the namespace
+        deps = FreeFnLst + Classes (recurs.) + Namespace-s
+        does internal dependency resolution
+    """
     def getDeps(self):
-        # part1; freeFunctions
-        deps = self._freeFnsContainer.getDeps()
-        # resolve internal depencies
+        # FreeFunctions
+        fnDeps = self._freeFnsContainer.getDeps()
+        
+        # Classes
+        clsDeps = pydeps.TypeDeps(self._childClasses)
+        
+        # Namespaces
+        nsDeps = pydeps.TypeDeps(self._childNamespaces)
+        
+        # All dependencies
+        deps = pydeps.TypeDeps([clsDeps, nsDeps, fnDeps])
+        
+        # resolve internal dependencies
         children = filter(self.isChild, deps)
         self.addInternalDeps(self._freeFnsContainer, children)
         

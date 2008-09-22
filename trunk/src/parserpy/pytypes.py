@@ -1,15 +1,11 @@
-# definition of type
-#
-# Most of the functions behave like this:
-# IN: type (pygccxml class, pointerType..)
-# OUT: declaration strubg
+# Definition of an arbitrary type (+ sequence)
 #
 # Rules: Pointer -> sequence
 #        Array   -> sequence
 #        Enum    -> enum
 #        Class   -> interface
 #        Reference, constness... todo
-# TODO: shortcut 4string
+# TODO: shortcut char* -> not sequence<char>, rather string
 
 import pygccxml.declarations as decls
 import pyscope
@@ -17,6 +13,10 @@ import pyresolvable
 import pydeps
 import pymisc
 
+""" IN:  pygccxml type
+    OUT: corresponding PPA type
+    TODO: specify when it is used
+"""
 def getTypePPA(ptype):
     """Determines arg type"""
     # not sure if these two cases can ever happen------------
@@ -30,47 +30,50 @@ def getTypePPA(ptype):
     elif  decls.is_class(ptype):
         return pyscope.CClass(ptype, pyresolvable.resolveNS(ptype))
     
+    # unknown / not yet implemented type.
+    # This is treated as class => there may be some complications.
     else:
         print 'WARNING: unknown type:' + str(ptype)
         return pyscope.CClass(ptype, pyresolvable.resolveNS(ptype))
         #raise Exception('getTypePPA::unknown type (maybe enum or something)')
     #for argDec in argDecom
     
-# Fundamental type, SequenceOf Types
-# *TypeRes*
+""" Sequence of types (or just container)
+    type can be fundamental or composite
+"""
 class TypedefSeq(pyresolvable.TypeRes):
-    # _typeName; _typeType from pyt
-    _pgxDecl = None      # base declaration
-    _typeType = 'Typedef'
+    # _typeName # init. in __init__
+    _pgxDecl = None       # base declaration
+    _typeType = 'Typedef' # 
     
-    _level = 0           # 0 = Base Type, pointlesss
-    _levelOfVar = 0      # further explanation!
+    _level = 0            # 0 = Base Type, (pointlesss?)
+    _levelOfVar = 0       # Highest indirection level. Can increase when merging
     #levelOfVar >= level
     
     
-    _baseName = ''       # aaah!!!
-    _baseTypeName = ''   # corba type
+    _baseName = ''        # base type name (equal to _typeName). TODO: remove?
+    _baseTypeName = ''    # idl type name
     
     # sequence extension
-    _deriveTypeName = '' # name to derive sequences from. (typically similar to _baseTypeName)
+    _deriveTypeName = ''  # name to derive sequences from. (typically similar to _baseTypeName)
     # is that below necssary?
     #_typeArrList = None  # [(typeName, typeDef decl.),...] -> primary index is level
-
     
     def __init__(self, decl):
         decom = decls.decompose_type(decl)
-        decom.reverse()
+        decom.reverse() # decom for int** is now [int, int*, int**]
         self._pgxDecl = base = decls.type_traits.remove_declarated(decom[0])
         
         if 'declarated' in str(type(base)):
             pymisc.cfgSet('declarated', base)
         
-        # type base is either fundamental type or class/enum/else
+        # type base is either fundamental type or class/enum/else. TODO: void
         if decls.type_traits.is_fundamental(base):
             self._baseName = base.decl_string
             self._baseTypeName = funIdlMapping(base)
             self._deriveTypeName = funIdlMappingShort(base)
             
+        # TODO: let classes/enums/... objects control it's name or control it from here?
         else:
             self._baseName = base.decl_string
             self._baseTypeName = self._deriveTypeName = base.decl_string.lstrip('::') ## TODO: maybe need to stripall a::b::[actual name]
@@ -83,14 +86,20 @@ class TypedefSeq(pyresolvable.TypeRes):
         self._levelOfVar = self._level
         self._typeName = self.getTypeName
                 
+    """ Side effects: if compared to another Typedef of same type:
+        increase _levelOfVar if necessary
+        
+        Testing equality is only used (NOW*) in type resolution.
+        Well, increasing level of indirection can't worsen anything.
+    """
     def isEqualToType(self, ptype):
-        # access private member TODO eliminate (or not)
-        if hasattr(ptype,'_levelOfVar'): # it is TypedefSeq
-            if(self._baseName == ptype._baseName): # it's the same
-                if self._level < ptype._level: #level correction
-                    self._level = ptype._level
+        if hasattr(ptype,'_typeType'):                  # use isinstance plz
+            if ptype._typeType == 'Typedef':            # it is TypedefSeq
+                if(self._baseName == ptype._baseName):  # it's the same
+                    if self._level < ptype._level:      #level correction
+                        self._level = ptype._level
                     
-                return True
+                    return True
         
         return False
         
@@ -98,20 +107,17 @@ class TypedefSeq(pyresolvable.TypeRes):
     # TODO: FOR EACH!!!!11
     def getDeps(self):
         if decls.type_traits.is_fundamental(self._pgxDecl):
-            return pydeps.TypeDeps()
+            return pydeps.TypeDeps()    # empty typedeps: fundamentals have no deps.
         
+        # this case is more like assert()
         elif decls.type_traits.is_pointer(self._pgxDecl):
             raise Exception('TypedefSeq base can not be pointer!')
         
         else:
             depType =  getTypePPA(self._pgxDecl)
             return pydeps.TypeDeps(depType)
-                
-    def isCompat(self, decl):
-        decom = decls.decompose_type(decl)
-        decom.reverse()
-        return decom[0].decl_string == self._baseName
     
+    """ TypeRes API """    
     def genDecls(self):
         decls = []
         
@@ -122,16 +128,30 @@ class TypedefSeq(pyresolvable.TypeRes):
             decls.append('typedef sequence<' + self._baseTypeName + '> ' + typeName)
         
         return decls
+                
+    """ increase dimension """
+    def _incDimension(self):
+        self._level += 1    
 
+    # DEPRECATED stuff, scheduled for removal
+    """ DEPRECATED """
+    def isCompat(self, decl):
+        decom = decls.decompose_type(decl)
+        decom.reverse()
+        return decom[0].decl_string == self._baseName
+
+    """ DEPRECATED """
     def getTypeName(self):
         if self._levelOfVar == 0:
             return self._baseTypeName
         else:
             return '_PPAt' + self._deriveTypeName + 'Seq'*self._levelOfVar
     
+    """ DEPRECATED """
     def _isCompatBaseDirect(self, base):
         return base.decl_string == self._isCompatBaseDirect
                 
+    """ DEPRECATED """
     # increase dimension if necessary
     def merge(self, decl):
         currLvl = 0
@@ -151,10 +171,6 @@ class TypedefSeq(pyresolvable.TypeRes):
         else:
             return self._typeArrList[currLvl-1][0]    # return type name
     
-    # increase dimensionh
-    def _incDimension(self):
-        self._level += 1    
-
 # FUNDAMENTAL TYPE MAPPING
 # todo: check 32/64
 # IN: C++ fundamental type

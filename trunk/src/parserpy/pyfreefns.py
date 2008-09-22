@@ -10,8 +10,10 @@ import pytypes
 import pyresolvable
 import pydeps
 
-# FreeFnContainer is leaf (with is FreeFns), so it doesn't have internal dependencies
-# Nothing can depend on it (and FreeFns)
+""" FreeFnContainer is leaf (with its FreeFns) in dependency tree,
+    so it doesn't have internal dependencies.
+    This is in interface _PPAFreeFuns
+"""
 class FreeFnsContainer(pyresolvable.TypeRes):
     _freeFuns = None        # FreeFunctions
     
@@ -29,10 +31,14 @@ class FreeFnsContainer(pyresolvable.TypeRes):
     def addFunc(self, freeFunc):
         self._freeFuns.append(freeFunc)
         
+    """ add free functions to container
+    """
     def addFuns(self, freeFuns):
-        self._freeFuns.extend(freeFuns)
+        self._freeFuns.extend(freeFuns) # uh-oh extend TODO: eq check
         
-    # There are no internal depencies. Pass everything to caller
+    """ There are no internal depencies. Pass everything to caller.
+        TypeRes API
+    """
     def getDeps(self):
         deps = pydeps.TypeDeps()
         for freeFunc in self._freeFuns:
@@ -40,26 +46,34 @@ class FreeFnsContainer(pyresolvable.TypeRes):
             
         return deps
     
+    """ Like getDeps, it's very simple
+        TypeRes API
+    """
     def genDecls(self):
         return ["interface _PPAFreeFuns"] + [[f.genDecls() for f in self._freeFuns]]
         
-    # print functions with types in natural form, as parsed    
+    """ Debugging: print pygccxml declarations
+    """
     def printFnsNat(self):
         pymisc.printFns([free_func.getFuncDecl() for free_func in self._freeFuns])
         
+    """ Debugging: print function declarations converted to idl
+    """
     def printFnsIdl(self):
         for fn in self._freeFuncDict:
             print fn.getFnIdlStringDef()
         
     
-# Implements isEqualToType
-# TODO: is this typeres?
+""" FreeFunc, can only be in FreeFnsContainer
+    Although it's TypeRes, it implements: isEqualToType, getDeps, genDecls
+"""
 class FreeFunc():
     _pgxDecl = None
     _retType = None
     _argTypes = None
     
-    # IN: function declaration, return Name, arg Names
+    """ IN: pygccxml free_function
+    """
     def __init__(self, func):
         self._pgxDecl = func
         self._retType = pytypes.TypedefSeq(func.return_type)

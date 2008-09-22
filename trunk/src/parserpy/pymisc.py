@@ -4,20 +4,27 @@ from pygccxml import parser,declarations
     OUT: classes, datatypes of arguments + return values
 """
 
-# static config container
+# Project-wide global variable container
 try:
     cfgDict
 except NameError:
     cfgDict = {}
 
-
-def cfgGet(key):
+""" Query project-wide variable
+    throws Exception if variable isn't there
+"""
+def cfgGet(key, defToNone = False):
     global cfgDict
     try:
         return cfgDict[key]
     except:
-        return None
-    
+        if defToNone:
+            return None
+        else: raise
+
+""" Set project-wide variable
+    throws Exception if variable is there and overwrite == False
+"""    
 def cfgSet(key, value, overwrite = False):
     global cfgDict
     if not overwrite and cfgDict.has_key(key):
@@ -26,6 +33,9 @@ def cfgSet(key, value, overwrite = False):
     else:
         cfgDict[key] = value
     
+""" Merge dictionary {'key':'value'} pairs into cfgDict.
+    Overwriting, no exceptions. Avoid using this method.
+"""
 def cfgMerge(dict2):
     global cfgDict
     cfgDict.update(dict2)

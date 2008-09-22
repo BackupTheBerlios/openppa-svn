@@ -1,4 +1,7 @@
-""" Generate idls and PPA wrapper files.
+""" entry point
+
+plz update diz:
+Generate idls and PPA wrapper files.
 Input: {PrjDir}
        List of definitions(headers) in {PrjDir}, called prjDefs
        Plugin API definitions(headers) plugDefs

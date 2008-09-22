@@ -33,6 +33,7 @@
             
     depency resolution:
         Every TypeRes must provide mechanism to resolve internal dependencies. See TypeRes for more information.
+        This mechanism is implemented in 'TypeRes'
 
 Testing example:
 		namespace x {
