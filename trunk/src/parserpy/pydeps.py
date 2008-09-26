@@ -1,4 +1,5 @@
-""" Depency resolution, generation of declarations
+""" **DEPRECATED**
+    Depency resolution, generation of declarations
     It works like this: I have type(TypeRes) t; I want to get all dependencies
     x = TypeDeps()
     x->addType(t)

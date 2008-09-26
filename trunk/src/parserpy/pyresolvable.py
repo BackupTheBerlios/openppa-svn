@@ -1,6 +1,8 @@
 """ Type resolution, dependenciesc ua  
     TypeDeps is only concerned with TypeRes(olvable)s 
     TypeRes must implement these (interface definition):
+    ***Warning: _TypeName is not completely free:*** TODO: specify
+    use form x::y::z -> where :: is parent-child separator  
         
         _typeType:
             string variable describing Type of TypeRes ('TypedefSeq', 'Namespace', ...)
@@ -116,12 +118,12 @@ class TypeRes():
                             # type + subtype = unique type identifier
     
     _orderedDepList = None  # -> 0.. = top..bottom
-    _depList = None         # {x : [y]} - where x depends on y-s # TODO SET
-    
+    _depDict = None         # {x : [y]} - where x depends on y-s # TODO SET
+        
     # this is abstract interface, do not allow instantiation **
     def __init__(self):
         self._orderedDepList = []
-        self._depList = []
+        self._depDict = {}
         
     def __hash__(self):
         hash(self.getUniqueIdentStr())
@@ -156,19 +158,21 @@ class TypeRes():
     # use: self.addInternalDeps(TypeRes->getDeps())
     # requirement: no list(resolution in self)
     def addInternalDeps(self, resType, resTypeDepList):
-        # if x is not in depList (and therefore not in orderedDepList)
-        #    add x to both lists, then add dependencies
-        if resType not in self._depList:
-            self._depList[resType] = resTypeDepList
-            self._orderedDepList.append(resType)
+        # if x is not in depDict add x to the list
+        if resType not in self._depDict:
+            self._depDict[resType] = resTypeDepList
             
-        # otherwise add it to the list. TODO: consider using sets
+            # if resType wasn't in depDict, it still could have been in orderedDepList
+            if resType not in self._orderedDepList:
+                self._orderedDepList.append(resType)
+            
+        # if x is in depDict and therefore in orderedDepList: merge it's dependencies
         else:
             for dep in self.resTypeDepList:
-                if dep not in self._depList[resType]:
-                    self._depList[resType].append(dep)
+                if dep not in self._depDict[resType]:
+                    self._depDict[resType].append(dep)
             
-        # we assume resType is already in orderedDepList    
+        # here, we assume resType is already in orderedDepList    
         for dep in resTypeDepList:
             self.addDepToOrdList(resType, dep)
                 
@@ -240,7 +244,7 @@ class TypeRes():
         s1 = self._orderedDepList[idx+1]
         
         # s1 must not depend on s0
-        for dep in self._depList.get(s1,[]):
+        for dep in self._depDict.get(s1,[]):
             if s0 == dep:
                 raise Exception('liftSwap: cycle detected while swapping s0=%s with s1=%s \
                                 s1 depends on s0' % (s0, s1))

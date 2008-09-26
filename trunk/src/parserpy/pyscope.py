@@ -148,7 +148,56 @@ class Namespace(Scopedef):
     """ Our namespace is ::a, class ::a::b. Class is in namespace. Simple.
     """
     def isChild(self, typeRes):
-        return typeRes.typeName.startswith(self.typeName)
+        raise Exception('isChild: not yet implemented')
+        # self = ::a::b, typeRes = ::a::b::c
+        if not self._typeName.startswith(typeRes._typeName):
+            return False
+                
+        selfTypePath = self._typeName.split('::')
+        childTypePath = typeRes.split('::')
+        selfTypePath[-1]
+    
+    """ Find lowest common parent of x and y (x,y are TypeRes).
+        If autoCreate is True(default), create this parent if necessary,
+        otherwise throw exception
+    """
+    def findParent(self, x, y, autoCreate = True):
+        pass
+    
+    """ Find child object,
+        If autoCreate is True(default), create this child if necessary,
+        otherwise throw exception
+    """
+    def findChild(self, typeRes, autoCreate = True):
+        # 1) is it me?
+        if self._typeName == typeRes._typeName:
+            return self
+        
+        # 2) can it be mine? (assertion)
+        if not (typeRes + '::').beginswith(self._typeName):
+            raise Exception('findChild query in irrelevant namespace')
+            
+        # 3) we assume this could be our child (depends on pygccxml)
+        (nextChildNode, dummy1, dummy2) = (typeRes._typeName
+                                            .lstrip(self._typeName)) \
+                                           .partition('::')
+        
+        for child in self._childNamespaces:
+            if child.lstrip(self._typeName) == nextChildNode:
+                print ('depency (' + typeRes._typeName + ') found in (' + self._typeName + ')')
+                return child
+            
+            
+        
+        # we didn't find the child namespace, soo make me a child
+        # can be class or namespace (or something else TODO)
+        if decls.type_traits.is_namespace(childScope):
+            Namespace(childScope, self) # add namespace
+            
+        elif decls.type_traits.is_class(childScope):
+            CClass(childScope, self)
+
+    
     # ------------------------------
     # --- TypeRes implementation ---
     # ------------------------------
@@ -182,24 +231,7 @@ class Namespace(Scopedef):
     # --- others ---
     # --------------
     def printFreeFns(self):
-        self._freeFnsContainer.printFnsNat()
-        
-    """ return child by name
-        must be only that exists in source (pygccxml)
-    """
-    def childScope(self, childScope):
-        for child in self._childNamespaces:
-            if child.getDecl().decl_string == childScope.decl_string:
-                return child
-            
-        # we didn't find the child namespace, soo make me a child
-        # can be class or namespace (or something else TODO)
-        if decls.type_traits.is_namespace(childScope):
-            Namespace(childScope, self) # add namespace
-            
-        elif decls.type_traits.is_class(childScope):
-            CClass(childScope, self)
-    
+        self._freeFnsContainer.printFnsNat()    
 
 class CClass(Scopedef):             # avoid name clash
     _childClasses = None
