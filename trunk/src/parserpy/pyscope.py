@@ -56,11 +56,15 @@ class Scopedef(pyresolvable.TypeRes):
     _pgxDecl = None
     _parent = None          # Namespace or Class (scopedef)
     _typeType = ''
-    
-    def __init__(self, decl, parent):
+
+    # common for namespace and class
+    def setTreeNodeInfo(self, decl):
         self._pgxDecl = decl
-        self._parent = parent
-        
+	self._typeName = decl.decl_string
+        if self._typeName == "::": setGlobalNS(self)
+
+        self._pgxDecl.ALLOW_EMPTY_MDECL_WRAPPER = True
+    
     # try to find free functions in namespace
     # that are not '__builtin_*'
     
@@ -95,25 +99,13 @@ class Namespace(Scopedef):
     _typeType = 'Namespace'
     
     # init with declaration
-    def __init__(self, decl, parent = None):
+    def __init__(self, decl):
         print 'creating namespace==' + decl.decl_string
-        
-        Scopedef.__init__(self, decl, parent)
         
         self._childNamespaces = []
         self._childClasses = []
         self._freeFnsContainer = pyfreefns.FreeFnsContainer()
-
-        if parent == None:  # global NS
-            setGlobalNS(self)
-            
-        # namespace can have only NS parent
-        else:
-            parent._childNamespaces.append(self)
-            
-        self._typeName = self._pgxDecl.decl_string
-        self._pgxDecl.ALLOW_EMPTY_MDECL_WRAPPER = True
-        
+ 
     # ---------------------------
     # --- Search declarations ---
     # ---------------------------
@@ -145,57 +137,67 @@ class Namespace(Scopedef):
             
         self._childClasses = clsList
         
-    """ Our namespace is ::a, class ::a::b. Class is in namespace. Simple.
+    """ Returns True if typeRes is child of self (not necessarily direct, not necessarily existent!)
+        self is not child of self
     """
     def isChild(self, typeRes):
-        raise Exception('isChild: not yet implemented')
-        # self = ::a::b, typeRes = ::a::b::c
-        if not self._typeName.startswith(typeRes._typeName):
-            return False
-                
-        selfTypePath = self._typeName.split('::')
-        childTypePath = typeRes.split('::')
-        selfTypePath[-1]
+        # 1) special case: global namespasce
+        if typeRes._typeName == '::':
+	    return True if (not self._typeName == '::') else False
+
+	typeResStrip = typeRes._typeName.lstrip(self._typeName)
+        if typeResStrip.startsWith('::'):
+            return True
+
+	return False
     
-    """ Find lowest common parent of x and y (x,y are TypeRes).
-        If autoCreate is True(default), create this parent if necessary,
-        otherwise throw exception
-    """
-    def findParent(self, x, y, autoCreate = True):
-        pass
-    
+    # --------------
+    # Tree insertion
+    # --------------
     """ Find child object,
-        If autoCreate is True(default), create this child if necessary,
-        otherwise throw exception
+        If child is in tree do nothing, ...
     """
     def findChild(self, typeRes, autoCreate = True):
         # 1) is it me?
         if self._typeName == typeRes._typeName:
             return self
         
-        # 2) can it be mine? (assertion)
-        if not (typeRes + '::').beginswith(self._typeName):
-            raise Exception('findChild query in irrelevant namespace')
+        assert(self.isChild(typeRes))
             
         # 3) we assume this could be our child (depends on pygccxml)
-        (nextChildNode, dummy1, dummy2) = (typeRes._typeName
-                                            .lstrip(self._typeName)) \
-                                           .partition('::')
-        
+	mePath = self._typeName.split('::')
+        assert(mePath[0] == '')
+	del mePath[0]
+
+        childPath = typeRes._typeName.split('::')
+	assert(childPath[0] == '')
+	del childPath[0]
+
         for child in self._childNamespaces:
-            if child.lstrip(self._typeName) == nextChildNode:
-                print ('depency (' + typeRes._typeName + ') found in (' + self._typeName + ')')
-                return child
-            
+           if child == typeRes:
+               return child
+               
+           if child.isChild(typeRes):
+	       return child.isChild(typeRes)
+
+	
+        for child in self._childClasses:
+           if child == typeRes:
+               return child
+
+           if child.isChild(typeRes):
+	       return child.isChild(typeRes)
             
         
-        # we didn't find the child namespace, soo make me a child
-        # can be class or namespace (or something else TODO)
-        if decls.type_traits.is_namespace(childScope):
-            Namespace(childScope, self) # add namespace
+        # we didn't find the child name TODO
+        if typeRes._typeType == "Namespace":
+            self._childNamespaces.append(typeRes)
             
-        elif decls.type_traits.is_class(childScope):
-            CClass(childScope, self)
+        elif typeRes._typeType == "Class":
+            self._childClasses.append(typeRes)
+
+        else:
+            assert(0)
 
     
     # ------------------------------
@@ -231,29 +233,14 @@ class Namespace(Scopedef):
     # --- others ---
     # --------------
     def printFreeFns(self):
-        self._freeFnsContainer.printFnsNat()    
+        self._freeFnsContainer.printFnsNat() 
 
 class CClass(Scopedef):             # avoid name clash
     _childClasses = None
     _typeType = 'CClass'
     
-    def __init__(self, decl, parent):
-        Scopedef.__init__(self, decl, parent)
+    def __init__(self, decl):
         self._childClasses = []
-        self._typeName = decl.decl_string
-        
-        # assign itself to global NS
-        # TODO is this necessarry?
-        if parent == None:
-            self._parent = getGlobalNS()
-        
-        else:
-            parentDecl = parent.getDecl()
-            if decls.type_traits.is_class(parentDecl):
-                parent._childClasses.append(self)
-                
-            elif decls.type_traits.is_namespace(parentDecl):
-                parent._childNamespaces.append(self)
         
     def findFreeFns(self):
         raise NotImplementedError('CClass::findFreeFns')

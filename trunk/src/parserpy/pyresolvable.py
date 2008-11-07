@@ -112,14 +112,28 @@ import pymisc
     
 """
 # use this as base class
-class TypeRes():
+class TypeRes(object):
     _typeType = ''          # main type string ('Namespace', 'Class'...)
     _typeName = '*UNKNOWN*' # declaration string. 'a::b'...
                             # type + subtype = unique type identifier
     
     _orderedDepList = None  # -> 0.. = top..bottom
     _depDict = None         # {x : [y]} - where x depends on y-s # TODO SET
-        
+
+    # this must be implemented in all subclasses
+    # __new__ calls this method     
+    #   
+    def setTreeNodeInfo(self, decl):
+        raise Exception("setTreeNodeInfo not implemented")
+
+    # this puts object automatically to tree
+    def __new__(typ, decl, *args, **kwargs):
+        obj = object.__new__(typ, decl, args, kwargs)
+        obj.setTreeNodeInfo(decl) # pre-init
+
+        globNS = pyscope.getGlobalNS()
+        return objNS.findChild(obj)
+
     # this is abstract interface, do not allow instantiation **
     def __init__(self):
         self._orderedDepList = []
