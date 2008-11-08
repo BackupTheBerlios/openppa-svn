@@ -15,17 +15,16 @@ import pymisc
 
 """ IN:  pygccxml type
     OUT: corresponding PPA type
-    TODO: specify when it is used
+    
+    This ppa type will be automaticaly put to the tree (it's TypeRes mechanism)
 """
 def getTypePPA(ptype):
-    """Determines arg type"""
-    # not sure if these two cases can ever happen------------
     if  decls.is_pointer(ptype):
         return TypedefSeq(ptype)
         
+    # specify return value
     elif decls.is_fundamental(ptype):
         return []
-    # -------------------------------------------------------
     
     elif  decls.is_class(ptype):
         return pyscope.CClass(ptype, pyresolvable.resolveNS(ptype))
@@ -44,28 +43,23 @@ def getTypePPA(ptype):
 class TypedefSeq(pyresolvable.TypeRes):
     # _typeName # init. in __init__
     _pgxDecl = None       # base declaration
-    _typeType = 'Typedef' # 
+    _typeType = 'Typedef' # TypedefSeq
     
-    _level = 0            # 0 = Base Type, (pointlesss?)
+    _level = 0            # 0 = Base Type (not allowed by assert)
     _levelOfVar = 0       # Highest indirection level. Can increase when merging
-    #levelOfVar >= level
-    
+                          # levelOfVar >= level
     
     _baseName = ''        # base type name (equal to _typeName). TODO: remove?
     _baseTypeName = ''    # idl type name
-    
-    # sequence extension
     _deriveTypeName = ''  # name to derive sequences from. (typically similar to _baseTypeName)
-    # is that below necssary?
+
+    # that below may be not
     #_typeArrList = None  # [(typeName, typeDef decl.),...] -> primary index is level
     
-    def __init__(self, decl):
+    def setTreeNodeInfo(self, decl):
         decom = decls.decompose_type(decl)
         decom.reverse() # decom for int** is now [int, int*, int**]
         self._pgxDecl = base = decls.type_traits.remove_declarated(decom[0])
-        
-        if 'declarated' in str(type(base)):
-            pymisc.cfgSet('declarated', base)
         
         # type base is either fundamental type or class/enum/else. TODO: void
         if decls.type_traits.is_fundamental(base):
@@ -74,6 +68,7 @@ class TypedefSeq(pyresolvable.TypeRes):
             self._deriveTypeName = funIdlMappingShort(base)
             
         # TODO: let classes/enums/... objects control it's name or control it from here?
+        # TODO2: specify the _whole_ mechanism behind this class
         else:
             self._baseName = base.decl_string
             self._baseTypeName = self._deriveTypeName = base.decl_string.lstrip('::') ## TODO: maybe need to stripall a::b::[actual name]
@@ -85,12 +80,19 @@ class TypedefSeq(pyresolvable.TypeRes):
                 
         self._levelOfVar = self._level
         self._typeName = self.getTypeName
+        
+        if not isinstance(decl, decls.cpptypes.void_t):
+            assert(self._level) # must not be null
+    
+    def __init__(self, decl):
+        #everything's in setTreeNodeInfo
+        pass
                 
     """ Side effects: if compared to another Typedef of same type:
         increase _levelOfVar if necessary
         
-        Testing equality is only used (NOW*) in type resolution.
-        Well, increasing level of indirection can't worsen anything.
+        Testing equality is only used in type resolution (NOW).
+        Increasing level of indirection can't worsen anything.
     """
     def isEqualToType(self, ptype):
         if hasattr(ptype,'_typeType'):                  # use isinstance plz
@@ -117,7 +119,7 @@ class TypedefSeq(pyresolvable.TypeRes):
             depType =  getTypePPA(self._pgxDecl)
             return pydeps.TypeDeps(depType)
     
-    """ TypeRes API """    
+    """ TypeRes API """
     def genDecls(self):
         decls = []
         

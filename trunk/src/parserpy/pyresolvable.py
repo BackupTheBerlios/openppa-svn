@@ -127,13 +127,21 @@ class TypeRes(object):
         raise Exception("setTreeNodeInfo not implemented")
 
     # this puts object automatically to tree
-    def __new__(typ, decl, *args, **kwargs):
-        obj = object.__new__(typ, decl, args, kwargs)
+    def __new__(typ, *args, **kwargs):
+        print "typ::", typ
+        print "ArGS::", args, kwargs
+        if len(args) > 0:
+            decl = args[0]
+            
+        else:
+            decl = kwargs['decl']
+            
+        obj = object.__new__(typ, args, kwargs)
         obj.setTreeNodeInfo(decl) # pre-init
 
         globNS = pyscope.getGlobalNS()
-        return objNS.findChild(obj)
-
+        return globNS.findChild(obj)
+    
     # this is abstract interface, do not allow instantiation **
     def __init__(self):
         self._orderedDepList = []

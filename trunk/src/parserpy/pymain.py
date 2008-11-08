@@ -57,7 +57,7 @@ for test in tests:
 declarations.ALLOW_EMPTY_MDECL_WRAPPER = True
 
 def main():
-    runTest(1)
+    runTest(0)
 
 def dbgRun(hFiles, config = None):
     global decls        # directly from parser

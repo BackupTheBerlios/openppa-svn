@@ -17,7 +17,16 @@ import pydeps
 class FreeFnsContainer(pyresolvable.TypeRes):
     _freeFuns = None        # FreeFunctions
     
-    def __init__(self):
+    def setTreeNodeInfo(self, decl):
+        self._typeType = "FreeFnsContainer"
+        self._pgxDecl = decl
+        
+        decStr = decl.decl_string
+        decStr = decStr.rstrip('::')
+        decStr += '::'
+        self._typeName = decStr
+        
+    def __init__(self, decl):
         self._freeFuns = []
     
     def isEqualToType(self, type):
@@ -76,12 +85,12 @@ class FreeFunc():
     """
     def __init__(self, func):
         self._pgxDecl = func
-        self._retType = pytypes.TypedefSeq(func.return_type)
+        self._retType = pytypes.getTypePPA(func.return_type)
         
         argTypes = []
 #        try:
         for arg in func.arguments:
-            argTypes.append(pytypes.TypedefSeq(arg.type))
+            argTypes.append(pytypes.getTypePPA(arg.type))
  #       except:
         #raise Exception('nondecl in function:' + func.name)
                 

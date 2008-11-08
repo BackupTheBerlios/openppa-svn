@@ -42,7 +42,7 @@ def getGlobalNS():
 """ See getGlobalNS
 """
 def setGlobalNS(ns):
-    if vars().has_key('globalNS'):
+    if globals().has_key('globalNS'):
         raise Exception('global NS already set')
     
     else:
@@ -60,7 +60,7 @@ class Scopedef(pyresolvable.TypeRes):
     # common for namespace and class
     def setTreeNodeInfo(self, decl):
         self._pgxDecl = decl
-	self._typeName = decl.decl_string
+        self._typeName = decl.decl_string
         if self._typeName == "::": setGlobalNS(self)
 
         self._pgxDecl.ALLOW_EMPTY_MDECL_WRAPPER = True
@@ -89,7 +89,10 @@ class Scopedef(pyresolvable.TypeRes):
     """
     def childScope(self):
         raise Exception('scope::childScope Not implemented')
-""" 
+    
+    
+    
+"""
     container of everything
 """
 class Namespace(Scopedef):
@@ -98,14 +101,22 @@ class Namespace(Scopedef):
     _freeFnsContainer = None  # Usually Plugin API (events)
     _typeType = 'Namespace'
     
+    def initTreeData(self, decl):
+        self._pgxDecl = decl
+        if self.decl_string == "::":
+            setGlobalNS()
+            
+        self._typeName = self._pgxDecl.decl_string
+
+    
     # init with declaration
     def __init__(self, decl):
         print 'creating namespace==' + decl.decl_string
         
         self._childNamespaces = []
         self._childClasses = []
-        self._freeFnsContainer = pyfreefns.FreeFnsContainer()
- 
+        self._freeFnsContainer = pyfreefns.FreeFnsContainer(self._pgxDecl)
+
     # ---------------------------
     # --- Search declarations ---
     # ---------------------------
@@ -143,13 +154,18 @@ class Namespace(Scopedef):
     def isChild(self, typeRes):
         # 1) special case: global namespasce
         if typeRes._typeName == '::':
-	    return True if (not self._typeName == '::') else False
+            return True if (not self._typeName == '::') else False
 
-	typeResStrip = typeRes._typeName.lstrip(self._typeName)
+        #try:
+        typeResStrip = typeRes._typeName.lstrip(self._typeName)
+            
+        #except:
+        #print "typeres error::", typeRes._typeName
+            
         if typeResStrip.startsWith('::'):
             return True
 
-	return False
+        else: return False
     
     # --------------
     # Tree insertion
@@ -165,35 +181,37 @@ class Namespace(Scopedef):
         assert(self.isChild(typeRes))
             
         # 3) we assume this could be our child (depends on pygccxml)
-	mePath = self._typeName.split('::')
+        mePath = self._typeName.split('::')
         assert(mePath[0] == '')
-	del mePath[0]
+        del mePath[0]
 
         childPath = typeRes._typeName.split('::')
-	assert(childPath[0] == '')
-	del childPath[0]
+        assert(childPath[0] == '')
+        del childPath[0]
 
         for child in self._childNamespaces:
-           if child == typeRes:
-               return child
+            if child == typeRes:
+                return child
                
-           if child.isChild(typeRes):
-	       return child.isChild(typeRes)
-
-	
+            if child.isChild(typeRes):
+                return child.isChild(typeRes)
+            
+            
         for child in self._childClasses:
-           if child == typeRes:
-               return child
-
-           if child.isChild(typeRes):
-	       return child.isChild(typeRes)
+            if child == typeRes:
+                return child
+            
+            if child.isChild(typeRes):
+                return child.isChild(typeRes)
             
         
         # we didn't find the child name TODO
         if typeRes._typeType == "Namespace":
+            #TODO!!
             self._childNamespaces.append(typeRes)
             
         elif typeRes._typeType == "Class":
+            #TODO-//-
             self._childClasses.append(typeRes)
 
         else:
